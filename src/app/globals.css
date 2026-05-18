@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0f;
+  --foreground: #f5f5f7;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+@layer components {
+  .match-card {
+    @apply bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-4 transition-all duration-200 hover:border-fifa-gold/50 hover:shadow-lg hover:shadow-fifa-gold/10;
+  }
+
+  .btn-primary {
+    @apply bg-fifa-gold text-fifa-dark font-semibold px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-800 text-gray-200 font-semibold px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors;
+  }
+
+  .input-field {
+    @apply bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-fifa-gold focus:ring-1 focus:ring-fifa-gold;
+  }
+
+  .stage-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
