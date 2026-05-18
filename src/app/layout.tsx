@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans min-h-screen bg-gradient-to-br from-fifa-dark via-gray-900 to-fifa-blue/20`}>
+      <body className={`${inter.variable} font-sans min-h-screen bg-slate-50`}>
         {children}
       </body>
     </html>

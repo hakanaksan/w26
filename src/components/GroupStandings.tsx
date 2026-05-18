@@ -1,6 +1,6 @@
 'use client';
 
-import { groups, teams } from '@/data/teams';
+import { groups, teams, getTeam } from '@/data/teams';
 import { matches } from '@/data/fixtures';
 
 interface GroupStandingsProps {
@@ -22,14 +22,17 @@ interface Standing {
 
 export default function GroupStandings({ selectedGroup, onGroupChange }: GroupStandingsProps) {
   const calculateStandings = (groupId: string): Standing[] => {
-    const groupTeams = teams.filter(t => t.groupId === groupId);
+    const groupTeams = Object.entries(teams)
+      .filter(([, team]) => team.groupId === groupId)
+      .map(([id]) => id);
+
     const groupMatches = matches.filter(m => m.group === groupId && m.isCompleted);
 
     const standings: Record<string, Standing> = {};
 
-    groupTeams.forEach(team => {
-      standings[team.id] = {
-        teamId: team.id,
+    groupTeams.forEach(teamId => {
+      standings[teamId] = {
+        teamId,
         played: 0,
         won: 0,
         drawn: 0,
@@ -81,76 +84,100 @@ export default function GroupStandings({ selectedGroup, onGroupChange }: GroupSt
 
   return (
     <div>
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {groups.map(group => (
           <button
             key={group.id}
             onClick={() => onGroupChange(group.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-w-[48px] ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               selectedGroup === group.id
-                ? 'bg-fifa-gold text-fifa-dark'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
             }`}
           >
-            {group.id}
+            {group.name}
           </button>
         ))}
       </div>
 
-      <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-800 text-xs text-gray-500">
-              <th className="text-left py-3 px-4">Team</th>
-              <th className="text-center py-3 px-2">P</th>
-              <th className="text-center py-3 px-2">W</th>
-              <th className="text-center py-3 px-2">D</th>
-              <th className="text-center py-3 px-2">L</th>
-              <th className="text-center py-3 px-2">GF</th>
-              <th className="text-center py-3 px-2">GA</th>
-              <th className="text-center py-3 px-2">GD</th>
-              <th className="text-center py-3 px-4">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {calculateStandings(selectedGroup).map((standing, index) => {
-              const team = teams.find(t => t.id === standing.teamId);
-              const isQualified = index < 2;
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-4 px-4">#</th>
+                <th className="text-left py-4 px-4">Takım</th>
+                <th className="text-center py-4 px-3">O</th>
+                <th className="text-center py-4 px-3">G</th>
+                <th className="text-center py-4 px-3">B</th>
+                <th className="text-center py-4 px-3">M</th>
+                <th className="text-center py-4 px-3">AG</th>
+                <th className="text-center py-4 px-3">YG</th>
+                <th className="text-center py-4 px-3">AV</th>
+                <th className="text-center py-4 px-4">Puan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {calculateStandings(selectedGroup).map((standing, index) => {
+                const team = getTeam(standing.teamId);
+                const isQualified = index < 2;
+                const isEliminated = index >= 2;
 
-              return (
-                <tr
-                  key={standing.teamId}
-                  className={`border-b border-gray-800/50 ${
-                    isQualified ? 'bg-green-500/5' : ''
-                  }`}
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{team?.flag}</span>
-                      <span className="font-medium text-white">{team?.name}</span>
-                    </div>
-                  </td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.played}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.won}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.drawn}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.lost}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.goalsFor}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">{standing.goalsAgainst}</td>
-                  <td className="text-center py-3 px-2 text-gray-400">
-                    {standing.goalDifference > 0 ? '+' : ''}{standing.goalDifference}
-                  </td>
-                  <td className="text-center py-3 px-4 font-bold text-fifa-gold">{standing.points}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr
+                    key={standing.teamId}
+                    className={`border-b border-gray-100 transition-colors hover:bg-gray-50 ${
+                      isQualified ? 'bg-emerald-50/50' : isEliminated ? 'bg-red-50/30' : ''
+                    }`}
+                  >
+                    <td className="py-4 px-4">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${
+                        isQualified ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {index + 1}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl">
+                          {team.flag}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-900">{team.name}</span>
+                          <span className="text-xs text-gray-500 ml-2">{team.code}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="text-center py-4 px-3 text-gray-600 font-medium">{standing.played}</td>
+                    <td className="text-center py-4 px-3 text-gray-600">{standing.won}</td>
+                    <td className="text-center py-4 px-3 text-gray-600">{standing.drawn}</td>
+                    <td className="text-center py-4 px-3 text-gray-600">{standing.lost}</td>
+                    <td className="text-center py-4 px-3 text-gray-600">{standing.goalsFor}</td>
+                    <td className="text-center py-4 px-3 text-gray-600">{standing.goalsAgainst}</td>
+                    <td className="text-center py-4 px-3 font-medium">
+                      <span className={standing.goalDifference > 0 ? 'text-emerald-600' : standing.goalDifference < 0 ? 'text-red-600' : 'text-gray-500'}>
+                        {standing.goalDifference > 0 ? '+' : ''}{standing.goalDifference}
+                      </span>
+                    </td>
+                    <td className="text-center py-4 px-4">
+                      <span className="text-lg font-black text-blue-600">{standing.points}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+      <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500/20 rounded"></div>
-          <span>Qualifies for Round of 32</span>
+          <div className="w-4 h-4 bg-emerald-100 rounded-lg border border-emerald-200"></div>
+          <span>Son 32'ye yükselir</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-red-50 rounded-lg border border-red-200"></div>
+          <span>Elendi</span>
         </div>
       </div>
     </div>

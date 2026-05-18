@@ -19,61 +19,71 @@ export default function NotificationModal({ matchId, matchName, onClose, onSave 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-white">Set Notification</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-3xl p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl">
+              🔔
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Bildirim Kur</h3>
+              <p className="text-sm text-gray-500">Maçı kaçırmayın!</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-xl transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <p className="text-sm text-gray-400 mb-4">{matchName}</p>
+        <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+          <p className="font-semibold text-gray-900">{matchName}</p>
+        </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Notification Type</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Bildirim Türü</label>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setNotificationType('before')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                   notificationType === 'before'
-                    ? 'bg-fifa-gold text-fifa-dark'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Before Match
+                ⏰ Maçtan Önce
               </button>
               <button
                 onClick={() => setNotificationType('kickoff')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                   notificationType === 'kickoff'
-                    ? 'bg-fifa-gold text-fifa-dark'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                At Kickoff
+                🚀 Başlangıçta
               </button>
             </div>
           </div>
 
           {notificationType === 'before' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Minutes Before</label>
-              <div className="flex gap-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Ne Kadar Önce</label>
+              <div className="grid grid-cols-4 gap-2">
                 {[10, 15, 30, 60].map(mins => (
                   <button
                     key={mins}
                     onClick={() => setMinutesBefore(mins)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`py-3 rounded-xl text-sm font-semibold transition-all ${
                       minutesBefore === mins
-                        ? 'bg-fifa-gold text-fifa-dark'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {mins} min
+                    {mins} dk
                   </button>
                 ))}
               </div>
@@ -82,11 +92,11 @@ export default function NotificationModal({ matchId, matchName, onClose, onSave 
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button onClick={onClose} className="btn-secondary flex-1">
-            Cancel
+          <button onClick={onClose} className="btn-secondary flex-1 py-3">
+            İptal
           </button>
-          <button onClick={handleSave} className="btn-primary flex-1">
-            Set Notification
+          <button onClick={handleSave} className="btn-primary flex-1 py-3">
+            🔔 Bildirimi Kur
           </button>
         </div>
       </div>
