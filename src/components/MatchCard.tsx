@@ -63,7 +63,6 @@ export default function MatchCard({ match, onScoreUpdate, onNotify }: MatchCardP
           </div>
           <div>
             <p className="font-bold text-gray-900 text-lg">{homeTeam.name}</p>
-            <p className="text-sm text-gray-500 font-medium">{homeTeam.code}</p>
           </div>
         </div>
 
@@ -108,7 +107,6 @@ export default function MatchCard({ match, onScoreUpdate, onNotify }: MatchCardP
         <div className="flex-1 flex items-center justify-end gap-4">
           <div className="text-right">
             <p className="font-bold text-gray-900 text-lg">{awayTeam.name}</p>
-            <p className="text-sm text-gray-500 font-medium">{awayTeam.code}</p>
           </div>
           <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
             {awayTeam.flag}
@@ -129,6 +127,7 @@ export default function MatchCard({ match, onScoreUpdate, onNotify }: MatchCardP
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {match.time}
+            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">TR</span>
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-gray-500">

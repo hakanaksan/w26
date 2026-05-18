@@ -142,10 +142,7 @@ export default function GroupStandings({ selectedGroup, onGroupChange }: GroupSt
                         <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl">
                           {team.flag}
                         </div>
-                        <div>
-                          <span className="font-semibold text-gray-900">{team.name}</span>
-                          <span className="text-xs text-gray-500 ml-2">{team.code}</span>
-                        </div>
+                        <span className="font-semibold text-gray-900">{team.name}</span>
                       </div>
                     </td>
                     <td className="text-center py-4 px-3 text-gray-600 font-medium">{standing.played}</td>
