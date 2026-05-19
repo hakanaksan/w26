@@ -16,21 +16,26 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-const tabs = [
+  const primaryTabs = [
     { id: 'fixtures', label: 'Ana Sayfa', icon: 'home' },
     { id: 'bracket', label: 'Turnuva', icon: 'bracket' },
     { id: 'results', label: 'Sonuçlar', icon: 'results' },
-    { id: 'scorers', label: 'Gol Kralı', icon: 'scorers' },
     { id: 'groups', label: 'Gruplar', icon: 'groups' },
+  ];
+
+  const moreTabs = [
+    { id: 'scorers', label: 'Gol Kralı', icon: 'scorers' },
     { id: 'leaderboard', label: 'Sıralama', icon: 'leaderboard' },
     { id: 'predictions', label: 'Tahminler', icon: 'predictions' },
+    { id: 'leagues', label: 'Ligler', icon: 'trophy' },
   ];
 
   const iconTabs = [
     { id: 'favorites', label: 'Favoriler', icon: 'star' },
     { id: 'notifications', label: 'Bildirimler', icon: 'bell' },
-    { id: 'leagues', label: 'Ligler', icon: 'trophy' },
   ];
+
+  const allTabs = [...primaryTabs, ...moreTabs, ...iconTabs];
 
   const renderIcon = (name: string, size: string = 'w-[18px] h-[18px]') => {
     const s = size;
@@ -38,13 +43,13 @@ const tabs = [
       case 'home':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4" /></svg>;
       case 'results':
-        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 0110 10 10 10 0 01-10 10A10 10 0 012 12 10 10 0 0112 2z" /><path d="M12 8v4l3 3" /></svg>;
+        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>;
       case 'scorers':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
       case 'groups':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
       case 'leaderboard':
-        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M5 7H3a1 1 0 00-1 1v10a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H5zm6-3v16m0 0h2a1 1 0 001-1V4a1 1 0 00-1-1h-2zm6 6v10m0 0h2a1 1 0 001-1v-4a1 1 0 00-1-1h-2z" /></svg>;
+        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4m6-3v16m0 0h2a1 1 0 001-1V4a1 1 0 00-1-1h-2zm6 6v10m0 0h2a1 1 0 001-1v-4a1 1 0 00-1-1h-2z" /></svg>;
       case 'predictions':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
       case 'bracket':
@@ -54,7 +59,7 @@ const tabs = [
       case 'bell':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.657V5a2 2 0 10-4 0v.343A6.002 6.002 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9" /></svg>;
       case 'trophy':
-        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4m14 0h-4m2 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7m4 10v2m6-2v2M9 14h6" />;</svg>;
+        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4m14 0h-4m2 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7m4 10v2m6-2v2M9 14h6" /></svg>;
       default:
         return null;
     }
@@ -65,6 +70,8 @@ const tabs = [
     onTabChange(tabId);
   };
 
+  const isActiveInMore = moreTabs.some(t => t.id === activeTab);
+
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,42 +80,91 @@ const tabs = [
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/50">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18L18 8.5v7l-6 3.75L6 15.5v-7l6-3.32z"/></svg>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Dünya Kupası 2026</h1>
-            </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-                title={tab.label}
-              >
-                {renderIcon(tab.icon)}
-                <span className="hidden lg:inline">{tab.label}</span>
-              </button>
-            ))}
-            <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-0.5" />
-            {iconTabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
-                className={`p-2 rounded-lg transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-                title={tab.label}
-              >
-                {renderIcon(tab.icon, 'w-[20px] h-[20px]')}
-              </button>
-            ))}
+          <nav className="hidden md:flex items-center">
+            <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+              {primaryTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                  title={tab.label}
+                >
+                  {renderIcon(tab.icon)}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className={`flex items-center gap-1 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActiveInMore
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl py-2 z-50">
+                    {moreTabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => { handleTabClick(tab.id); setMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all ${
+                          activeTab === tab.id
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {renderIcon(tab.icon)}
+                        {tab.label}
+                      </button>
+                    ))}
+                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                    {iconTabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => { handleTabClick(tab.id); setMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all ${
+                          activeTab === tab.id
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {renderIcon(tab.icon)}
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-0.5 ml-1">
+              {iconTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`p-2 rounded-lg transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                  title={tab.label}
+                >
+                  {renderIcon(tab.icon, 'w-[18px] h-[18px]')}
+                </button>
+              ))}
+            </div>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -133,7 +189,6 @@ const tabs = [
                   <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden sm:block max-w-[80px] truncate">{user.name}</span>
                 </button>
 
                 {userMenuOpen && (
@@ -153,7 +208,7 @@ const tabs = [
               </div>
             ) : (
               <Link href="/auth/login" className="btn-primary text-sm px-3 py-1.5">
-                Giriş Yap
+                Giriş
               </Link>
             )}
 
@@ -175,7 +230,7 @@ const tabs = [
         {menuOpen && (
           <nav className="md:hidden pb-3 pt-1">
             <div className="grid grid-cols-2 gap-1">
-              {[...tabs, ...iconTabs].map(tab => (
+              {allTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => {
