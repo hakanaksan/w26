@@ -8,6 +8,7 @@ import MatchCard, { MiniMatchCard } from '@/components/MatchCard';
 import GroupStandings from '@/components/GroupStandings';
 import NotificationsList from '@/components/NotificationsList';
 import NotificationModal from '@/components/NotificationModal';
+import NewsSection from '@/components/NewsSection';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
@@ -320,6 +321,8 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            <NewsSection />
 
             <div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Tarih Seç</h3>
