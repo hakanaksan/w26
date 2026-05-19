@@ -2,9 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+  }
+
+  .dark {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+  }
 }
 
 .scrollbar-hide {
@@ -23,7 +30,7 @@ body {
 
 @layer components {
   .match-card {
-    @apply bg-white border border-gray-200 rounded-2xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-100/50;
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30;
   }
 
   .btn-primary {
@@ -31,11 +38,11 @@ body {
   }
 
   .btn-secondary {
-    @apply bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-200 transition-colors;
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors;
   }
 
   .input-field {
-    @apply bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all;
+    @apply bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all;
   }
 
   .stage-badge {

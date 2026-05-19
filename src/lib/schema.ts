@@ -37,7 +37,15 @@ export const userNotifications = sqliteTable('user_notifications', {
   createdAt: text('created_at').notNull(),
 });
 
+export const favorites = sqliteTable('favorites', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').references(() => users.id).notNull(),
+  matchId: text('match_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Prediction = typeof predictions.$inferSelect;
 export type MatchScore = typeof matchScores.$inferSelect;
 export type UserNotification = typeof userNotifications.$inferSelect;
+export type Favorite = typeof favorites.$inferSelect;

@@ -50,3 +50,18 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ id, matchId, homeScore, awayScore });
 }
+
+export async function DELETE(request: Request) {
+  const user = await getUser(request);
+  if (!user) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
+
+  const { matchId } = await request.json();
+  if (!matchId) return NextResponse.json({ error: 'matchId gerekli' }, { status: 400 });
+
+  await client.execute({
+    sql: 'DELETE FROM predictions WHERE user_id = ? AND match_id = ?',
+    args: [user.userId, matchId],
+  });
+
+  return NextResponse.json({ success: true });
+}

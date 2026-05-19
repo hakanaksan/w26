@@ -39,36 +39,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-blue-200">🏆</div>
-          <h1 className="text-2xl font-black text-gray-900">Kayıt Ol</h1>
-          <p className="text-gray-500 mt-2">Dünya Kupası 2026 tahminlerine başla</p>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-blue-200 dark:shadow-blue-900">🏆</div>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Kayıt Ol</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Dünya Kupası 2026 tahminlerine başla</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">{error}</div>
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ad Soyad</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Ad Soyad</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} required className="input-field w-full" placeholder="Ahmet Yılmaz" />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">E-posta</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">E-posta</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="input-field w-full" placeholder="ornek@email.com" />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Şifre</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Şifre</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="input-field w-full" placeholder="En az 6 karakter" />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Şifre Tekrar</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Şifre Tekrar</label>
             <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="input-field w-full" placeholder="Şifrenizi tekrar girin" />
           </div>
 
@@ -76,8 +76,8 @@ export default function RegisterPage() {
             {loading ? 'Kayıt oluşturuluyor...' : 'Kayıt Ol'}
           </button>
 
-          <p className="text-center text-sm text-gray-500">
-            Zaten hesabın var mı? <a href="/auth/login" className="text-blue-600 font-semibold hover:underline">Giriş yap</a>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Zaten hesabın var mı? <a href="/auth/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">Giriş yap</a>
           </p>
         </form>
       </div>

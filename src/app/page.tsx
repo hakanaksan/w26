@@ -19,28 +19,15 @@ export default function Home() {
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [localMatches, setLocalMatches] = useState(allMatches);
   const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [notificationModal, setNotificationModal] = useState<{ matchId: string; matchName: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; close: number; missed: number; points: number }[]>([]);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
 
   useEffect(() => {
-    if (!token) return;
-    const fetchPredictions = async () => {
-      try {
-        const res = await fetch('/api/predictions', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setPredictions(data.predictions || {});
-        }
-      } catch {}
-    };
-    fetchPredictions();
-  }, [token]);
-
-  useEffect(() => {
-    const fetchScores = async () => {
+    const fetchInitialData = async () => {
       try {
         const res = await fetch('/api/scores');
         if (res.ok) {
@@ -56,55 +43,80 @@ export default function Home() {
           }
         }
       } catch {}
+      setIsLoading(false);
     };
-    fetchScores();
+    fetchInitialData();
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+    const fetchPredictions = async () => {
+      try {
+        const res = await fetch('/api/predictions', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setPredictions(data.predictions || {});
+        }
+      } catch {}
+    };
+    const fetchFavorites = async () => {
+      try {
+        const res = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setFavorites(data.favorites || []);
+        }
+      } catch {}
+    };
+    fetchPredictions();
+    fetchFavorites();
+  }, [token]);
+
+  useEffect(() => {
+    if (activeTab !== 'leaderboard') return;
+    fetch('/api/leaderboard').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setLeaderboard(data.leaderboard || [])).catch(() => {});
+  }, [activeTab]);
+
   const saveScoreToDB = useCallback(async (matchId: string, homeScore: number, awayScore: number) => {
-    try {
-      await fetch('/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, homeScore, awayScore }),
-      });
-    } catch {}
+    try { await fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchId, homeScore, awayScore }) }); } catch {}
   }, []);
 
   const deleteScoreFromDB = useCallback(async (matchId: string) => {
-    try {
-      await fetch('/api/scores', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId }),
-      });
-    } catch {}
+    try { await fetch('/api/scores', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchId }) }); } catch {}
   }, []);
 
   const handleScoreUpdate = (matchId: string, homeScore: number, awayScore: number) => {
-    setLocalMatches(prev => prev.map(m =>
-      m.id === matchId ? { ...m, homeScore, awayScore, isCompleted: true } : m
-    ));
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore, awayScore, isCompleted: true } : m));
     saveScoreToDB(matchId, homeScore, awayScore);
   };
 
   const handleClearScore = (matchId: string) => {
-    setLocalMatches(prev => prev.map(m =>
-      m.id === matchId ? { ...m, homeScore: undefined, awayScore: undefined, isCompleted: false } : m
-    ));
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: undefined, awayScore: undefined, isCompleted: false } : m));
     deleteScoreFromDB(matchId);
   };
 
   const handlePredict = async (matchId: string, homeScore: number, awayScore: number) => {
     setPredictions(prev => ({ ...prev, [matchId]: { homeScore, awayScore } }));
-
     if (token) {
-      try {
-        await fetch('/api/predictions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ matchId, homeScore, awayScore }),
-        });
-      } catch {}
+      try { await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, homeScore, awayScore }) }); } catch {}
+    }
+  };
+
+  const handleDeletePrediction = async (matchId: string) => {
+    setPredictions(prev => { const next = { ...prev }; delete next[matchId]; return next; });
+    if (token) {
+      try { await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+    }
+  };
+
+  const toggleFavorite = async (matchId: string) => {
+    if (!token) return;
+    if (favorites.includes(matchId)) {
+      setFavorites(prev => prev.filter(id => id !== matchId));
+      try { await fetch('/api/favorites', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+    } else {
+      setFavorites(prev => [...prev, matchId]);
+      try { await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
     }
   };
 
@@ -113,30 +125,18 @@ export default function Home() {
     if (match) {
       const homeTeam = getTeam(match.homeTeamId);
       const awayTeam = getTeam(match.awayTeamId);
-      setNotificationModal({
-        matchId,
-        matchName: `${homeTeam.name} vs ${awayTeam.name}`,
-      });
+      setNotificationModal({ matchId, matchName: `${homeTeam.name} vs ${awayTeam.name}` });
     }
   };
 
   const handleSaveNotification = async (matchId: string, type: string, minutesBefore: number) => {
     if (token) {
-      try {
-        await fetch('/api/notifications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ matchId, type, minutesBefore }),
-        });
-      } catch {}
+      try { await fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, type, minutesBefore }) }); } catch {}
     }
-
     if ('Notification' in window && Notification.permission === 'granted') {
       scheduleNotification({ matchId, minutesBefore });
     } else if ('Notification' in window) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') scheduleNotification({ matchId, minutesBefore });
-      });
+      Notification.requestPermission().then(permission => { if (permission === 'granted') scheduleNotification({ matchId, minutesBefore }); });
     }
   };
 
@@ -205,19 +205,32 @@ export default function Home() {
   const upcoming24h = getUpcomingMatches();
   const nextUpcoming = getNextUpcomingMatches();
   const recentCompleted = getRecentCompletedMatches();
+  const favoriteMatches = matches.filter(m => favorites.includes(m.id));
+  const completedMatches = matches.filter(m => m.isCompleted || m.homeScore !== undefined);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'fixtures' && (
           <div className="space-y-8">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-xl shadow-blue-200">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 dark:shadow-blue-900/50">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div>
                   <h2 className="text-3xl font-black mb-2">2026 FIFA Dünya Kupası</h2>
-                  <p className="text-blue-100 text-lg">11 Haziran - 19 Temmuz 2026 • ABD, Kanada ve Meksika</p>
+                  <p className="text-blue-100 text-lg">11 Haziran - 19 Temmuz 2026</p>
                   <div className="flex items-center gap-2 mt-2">
                     {isApiConfigured ? (
                       <button onClick={refreshLiveScores} disabled={liveLoading} className="flex items-center gap-1.5 text-xs bg-emerald-400/20 text-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-400/30 transition-colors disabled:opacity-50">
@@ -228,7 +241,7 @@ export default function Home() {
                     ) : (
                       <span className="flex items-center gap-1.5 text-xs bg-amber-400/20 text-amber-200 px-3 py-1 rounded-full">
                         <span className="w-2 h-2 bg-amber-400 rounded-full" />
-                        Manuel mod — skorları kendiniz girebilirsiniz
+                        Manuel mod
                       </span>
                     )}
                     {liveLoading && <span className="text-xs text-blue-200 animate-pulse">Güncelleniyor...</span>}
@@ -256,38 +269,36 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-lg">⏰</div>
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-lg">⏰</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">24 Saat İçinde Başlayacaklar</h3>
-                    <p className="text-sm text-gray-500">{upcoming24h.length} yaklaşan maç</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">24 Saat İçinde Başlayacaklar</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{upcoming24h.length} yaklaşan maç</p>
                   </div>
                 </div>
                 {upcoming24h.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-gray-400 dark:text-gray-500">
                     <p className="text-3xl mb-2">🏟️</p>
                     <p className="text-sm">Önümüzdeki 24 saatte maç yok</p>
-                    <p className="text-xs mt-1">Aşağıdaki yaklaşan maçlara göz atın</p>
                   </div>
                 ) : (
                   <div className="space-y-3">{upcoming24h.map(m => <MiniMatchCard key={m.id} match={m} />)}</div>
                 )}
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-lg">⚽</div>
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-lg">⚽</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Son Oynanan Maçlar</h3>
-                    <p className="text-sm text-gray-500">{recentCompleted.length} tamamlanan maç</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Son Oynanan Maçlar</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{recentCompleted.length} tamamlanan maç</p>
                   </div>
                 </div>
                 {recentCompleted.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-gray-400 dark:text-gray-500">
                     <p className="text-3xl mb-2">📋</p>
                     <p className="text-sm">Henüz tamamlanan maç yok</p>
-                    <p className="text-xs mt-1">Skor girdiğinizde burada görünür</p>
                   </div>
                 ) : (
                   <div className="space-y-3">{recentCompleted.map(m => <MiniMatchCard key={m.id} match={m} />)}</div>
@@ -296,12 +307,12 @@ export default function Home() {
             </div>
 
             {nextUpcoming.length > 0 && upcoming24h.length === 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-lg">📅</div>
+                  <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-lg">📅</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Sonraki Maçlar</h3>
-                    <p className="text-sm text-gray-500">Turnuvanın yaklaşan maçları</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Sonraki Maçlar</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Turnuvanın yaklaşan maçları</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -311,18 +322,18 @@ export default function Home() {
             )}
 
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Tarih Seç</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Tarih Seç</h3>
               <DaySelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 Maçlar — {new Date(selectedDate + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h3>
               {getMatchesByDate(selectedDate).length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
-                  <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
-                  <p className="text-gray-500 text-lg">Bu tarih için maç bulunmuyor</p>
+                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                  <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">Bu tarih için maç bulunmuyor</p>
                 </div>
               ) : (
                 getMatchesByDate(selectedDate).map(match => (
@@ -330,10 +341,13 @@ export default function Home() {
                     key={match.id}
                     match={match}
                     prediction={predictions[match.id] || null}
-                    onScoreUpdate={handleScoreUpdate}
-                    onClearScore={handleClearScore}
+                    onScoreUpdate={user ? handleScoreUpdate : undefined}
+                    onClearScore={user ? handleClearScore : undefined}
                     onPredict={user ? handlePredict : undefined}
                     onNotify={handleNotify}
+                    onDeletePrediction={user ? handleDeletePrediction : undefined}
+                    isFavorite={favorites.includes(match.id)}
+                    onToggleFavorite={user ? toggleFavorite : undefined}
                   />
                 ))
               )}
@@ -341,57 +355,182 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === 'results' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-2xl">⚽</div>
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Sonuçlar</h2>
+                <p className="text-gray-500 dark:text-gray-400">Tamamlanan maçlar ve tahmin karşılaştırması</p>
+              </div>
+            </div>
+
+            {completedMatches.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">📋</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Henüz sonuç yok</h3>
+                <p className="text-gray-500 dark:text-gray-400">Skor girdiğinizde burada görünür</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {completedMatches.sort((a, b) => b.date.localeCompare(a.date)).map(match => {
+                  const homeTeam = getTeam(match.homeTeamId);
+                  const awayTeam = getTeam(match.awayTeamId);
+                  const pred = predictions[match.id];
+                  return (
+                    <div key={match.id} className="match-card">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`stage-badge border ${match.stage === 'Grup' ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'}`}>{match.stage}</span>
+                        {match.group && <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">{match.group}. Grup</span>}
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3 flex-1">
+                          <img src={homeTeam.flag || ''} alt={homeTeam.name} className="w-10 h-7 rounded object-cover" />
+                          <span className="font-semibold text-gray-900 dark:text-white">{homeTeam.name}</span>
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-1 justify-end">
+                          <span className="font-semibold text-gray-900 dark:text-white">{awayTeam.name}</span>
+                          <img src={awayTeam.flag || ''} alt={awayTeam.name} className="w-10 h-7 rounded object-cover" />
+                        </div>
+                      </div>
+                      {pred && (
+                        <div className="mt-3 px-3 py-2 rounded-lg flex items-center justify-between text-sm border border-gray-200 dark:border-gray-600">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">🎯 Tahminin:</span>
+                          <div className="flex items-center gap-2">
+                            <span className={pred.homeScore === match.homeScore && pred.awayScore === match.awayScore ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-red-500 dark:text-red-400 font-bold'}>
+                              {pred.homeScore} - {pred.awayScore}
+                            </span>
+                            {pred.homeScore === match.homeScore && pred.awayScore === match.awayScore && (
+                              <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">✓ Tam isabet!</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'groups' && (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl">📊</div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-2xl">📊</div>
               <div>
-                <h2 className="text-2xl font-black text-gray-900">Grup Puan Durumu</h2>
-                <p className="text-gray-500">Takımların durumunu takip edin</p>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Grup Puan Durumu</h2>
+                <p className="text-gray-500 dark:text-gray-400">Takımların durumunu takip edin</p>
               </div>
             </div>
             <GroupStandings selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} matches={matches} />
           </div>
         )}
 
+        {activeTab === 'leaderboard' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-2xl">🏆</div>
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Sıralama</h2>
+                <p className="text-gray-500 dark:text-gray-400">En başarılı tahminciler</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <th className="text-left py-4 px-4">#</th>
+                      <th className="text-left py-4 px-4">Kullanıcı</th>
+                      <th className="text-center py-4 px-2">Tahmin</th>
+                      <th className="text-center py-4 px-2">Tam</th>
+                      <th className="text-center py-4 px-2">Yakın</th>
+                      <th className="text-center py-4 px-2">Isabet Yok</th>
+                      <th className="text-center py-4 px-4">Puan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="text-center py-12 text-gray-400 dark:text-gray-500">
+                          <p className="text-3xl mb-2">🏆</p>
+                          <p className="text-sm">Henüz sıralama yok</p>
+                          <p className="text-xs mt-1">Tahmin yapıldığında burada görünür</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      leaderboard.map((entry, index) => (
+                        <tr key={entry.userId} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${index < 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
+                          <td className="py-4 px-4">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${index === 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : index === 1 ? 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' : index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                              {index + 1}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{entry.name}</td>
+                          <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{entry.completedPredictions}</td>
+                          <td className="text-center py-4 px-2 text-emerald-600 dark:text-emerald-400 font-medium">{entry.exact}</td>
+                          <td className="text-center py-4 px-2 text-amber-600 dark:text-amber-400">{entry.close}</td>
+                          <td className="text-center py-4 px-2 text-red-500 dark:text-red-400">{entry.missed}</td>
+                          <td className="text-center py-4 px-4"><span className="text-lg font-black text-blue-600 dark:text-blue-400">{entry.points}</span></td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <p className="font-medium mb-1">Puanlama:</p>
+              <p>• Tam isabet (gerçek skorun aynısı): <strong>3 puan</strong></p>
+              <p>• Yakın tahmin (gol farkı veya bir skor doğru): <strong>1 puan</strong></p>
+              <p>• Isabet yok: <strong>0 puan</strong></p>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'predictions' && (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl">🎯</div>
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-2xl">🎯</div>
               <div>
-                <h2 className="text-2xl font-black text-gray-900">Tahminlerim</h2>
-                <p className="text-gray-500">Maç sonuçlarını tahmin edin ve skorlarıyla karşılaştırın</p>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Tahminlerim</h2>
+                <p className="text-gray-500 dark:text-gray-400">Maç sonuçlarını tahmin edin ve skorlarıyla karşılaştırın</p>
               </div>
             </div>
 
             {!user ? (
-              <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
-                <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">👤</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Giriş Yapın</h3>
-                <p className="text-gray-500 mb-6">Tahmin yapmak için giriş yapmanız gerekiyor</p>
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">👤</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Giriş Yapın</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">Tahmin yapmak için giriş yapmanız gerekiyor</p>
                 <a href="/auth/login" className="btn-primary inline-block px-8 py-3">Giriş Yap</a>
               </div>
             ) : (
               <>
                 {Object.keys(predictions).length > 0 && (
-                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Tahmin İstatistikleri</h3>
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tahmin İstatistikleri</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-blue-50 rounded-xl p-4 text-center">
-                        <p className="text-2xl font-black text-blue-600">{stats.predictionsCount}</p>
-                        <p className="text-sm text-blue-700">Toplam Tahmin</p>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.predictionsCount}</p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">Toplam Tahmin</p>
                       </div>
-                      <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                        <p className="text-2xl font-black text-emerald-600">{predStats.exact}</p>
-                        <p className="text-sm text-emerald-700">Tam isabet</p>
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{predStats.exact}</p>
+                        <p className="text-sm text-emerald-700 dark:text-emerald-300">Tam isabet</p>
                       </div>
-                      <div className="bg-amber-50 rounded-xl p-4 text-center">
-                        <p className="text-2xl font-black text-amber-600">{predStats.close}</p>
-                        <p className="text-sm text-amber-700">Yakın Tahmin</p>
+                      <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{predStats.close}</p>
+                        <p className="text-sm text-amber-700 dark:text-amber-300">Yakın Tahmin</p>
                       </div>
-                      <div className="bg-red-50 rounded-xl p-4 text-center">
-                        <p className="text-2xl font-black text-red-600">{predStats.missed}</p>
-                        <p className="text-sm text-red-700">Isabet Yok</p>
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-black text-red-600 dark:text-red-400">{predStats.missed}</p>
+                        <p className="text-sm text-red-700 dark:text-red-300">Isabet Yok</p>
                       </div>
                     </div>
                   </div>
@@ -399,10 +538,10 @@ export default function Home() {
 
                 <div className="space-y-4">
                   {Object.keys(predictions).length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
-                      <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">🎯</div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">Henüz Tahmin Yok</h3>
-                      <p className="text-gray-500">Fikstür sekmesinden maçlar için tahmin yapın!</p>
+                    <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                      <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">🎯</div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Henüz Tahmin Yok</h3>
+                      <p className="text-gray-500 dark:text-gray-400">Ana Sayfa sekmesinden maçlar için tahmin yapın!</p>
                     </div>
                   ) : (
                     matches.filter(m => predictions[m.id]).map(match => {
@@ -412,27 +551,27 @@ export default function Home() {
                       return (
                         <div key={match.id} className="match-card">
                           <div className="flex items-center justify-between mb-3">
-                            <span className={`stage-badge border ${match.stage === 'Grup' ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>{match.stage}</span>
-                            {match.group && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{match.group}. Grup</span>}
+                            <span className={`stage-badge border ${match.stage === 'Grup' ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'}`}>{match.stage}</span>
+                            {match.group && <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">{match.group}. Grup</span>}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
                               <img src={homeTeam.flag} alt={homeTeam.name} className="w-10 h-7 rounded object-cover" />
-                              <span className="font-semibold text-gray-900">{homeTeam.name}</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">{homeTeam.name}</span>
                             </div>
                             <div className="text-center px-4">
                               {match.isCompleted ? (
                                 <div>
-                                  <div className="text-2xl font-black text-gray-900">{match.homeScore} - {match.awayScore}</div>
-                                  <div className="text-xs text-gray-500 mt-1">Gerçek Skor</div>
+                                  <div className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Gerçek Skor</div>
                                 </div>
                               ) : (
-                                <div className="text-sm font-medium text-gray-500">Henüz oynanmadı</div>
+                                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Henüz oynanmadı</div>
                               )}
-                              <div className="text-sm font-bold text-amber-600 mt-1">🎯 {pred.homeScore} - {pred.awayScore}</div>
+                              <div className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-1">🎯 {pred.homeScore} - {pred.awayScore}</div>
                             </div>
                             <div className="flex items-center gap-3 flex-1 justify-end">
-                              <span className="font-semibold text-gray-900">{awayTeam.name}</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">{awayTeam.name}</span>
                               <img src={awayTeam.flag} alt={awayTeam.name} className="w-10 h-7 rounded object-cover" />
                             </div>
                           </div>
@@ -440,13 +579,21 @@ export default function Home() {
                             const isExact = pred.homeScore === match.homeScore && pred.awayScore === match.awayScore;
                             const isClose = !isExact && (pred.homeScore === match.homeScore || pred.awayScore === match.awayScore || (pred.homeScore - pred.awayScore === match.homeScore! - match.awayScore!));
                             return (
-                              <div className="mt-3 flex items-center justify-center">
-                                {isExact && <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-4 py-1.5 rounded-full">✓ Tam isabet!</span>}
-                                {isClose && !isExact && <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-4 py-1.5 rounded-full">~ Yakın tahmin</span>}
-                                {!isExact && !isClose && <span className="text-sm font-semibold text-red-600 bg-red-50 px-4 py-1.5 rounded-full">✗ Isabet yok</span>}
+                              <div className="mt-3 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isExact && <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full">✓ Tam isabet!</span>}
+                                  {isClose && !isExact && <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-1.5 rounded-full">~ Yakın tahmin</span>}
+                                  {!isExact && !isClose && <span className="text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-4 py-1.5 rounded-full">✗ Isabet yok</span>}
+                                </div>
+                                <button onClick={() => handleDeletePrediction(match.id)} className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline">Sil</button>
                               </div>
                             );
                           })()}
+                          {!match.isCompleted && (
+                            <div className="mt-3 flex justify-end">
+                              <button onClick={() => handleDeletePrediction(match.id)} className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline">Tahmini Sil</button>
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -457,13 +604,57 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === 'favorites' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center text-2xl">⭐</div>
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Favorilerim</h2>
+                <p className="text-gray-500 dark:text-gray-400">Takip etmek istediğiniz maçlar</p>
+              </div>
+            </div>
+
+            {!user ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">👤</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Giriş Yapın</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">Favori maçları kullanmak için giriş yapmanız gerekiyor</p>
+                <a href="/auth/login" className="btn-primary inline-block px-8 py-3">Giriş Yap</a>
+              </div>
+            ) : favoriteMatches.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⭐</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Favori Maç Yok</h3>
+                <p className="text-gray-500 dark:text-gray-400">Ana Sayfa'daki maçlarda ⭐ butonuna tıklayarak favorilere ekleyin</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {favoriteMatches.map(match => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    prediction={predictions[match.id] || null}
+                    onScoreUpdate={user ? handleScoreUpdate : undefined}
+                    onClearScore={user ? handleClearScore : undefined}
+                    onPredict={user ? handlePredict : undefined}
+                    onNotify={handleNotify}
+                    onDeletePrediction={user ? handleDeletePrediction : undefined}
+                    isFavorite={true}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'notifications' && (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
               <div>
-                <h2 className="text-2xl font-black text-gray-900">Bildirimlerim</h2>
-                <p className="text-gray-500">Maçları kaçırmayın!</p>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Bildirimlerim</h2>
+                <p className="text-gray-500 dark:text-gray-400">Maçları kaçırmayın!</p>
               </div>
             </div>
             <NotificationsList />
@@ -471,13 +662,13 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="mt-16 py-8 border-t border-gray-200 bg-white">
+      <footer className="mt-16 py-8 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="text-2xl">🏆</span>
-            <span className="font-bold text-gray-900">FIFA Dünya Kupası 2026</span>
+            <span className="font-bold text-gray-900 dark:text-white">FIFA Dünya Kupası 2026</span>
           </div>
-          <p className="text-sm text-gray-500">Fikstür Takip</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Fikstür Takip</p>
         </div>
       </footer>
 

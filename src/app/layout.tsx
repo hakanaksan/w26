@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
+import { ThemeProvider } from 'next-themes';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -16,11 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr">
-      <body className={`${inter.variable} font-sans min-h-screen bg-slate-50`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+    <html lang="tr" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors`}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
