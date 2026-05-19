@@ -37,7 +37,7 @@ export function MiniMatchCard({ match }: { match: Match }) {
   const isCompleted = match.isCompleted || match.homeScore !== undefined;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-600 transition-all">
+    <a href={`/match/${match.id}`} className="block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-gray-400 dark:text-gray-500">{match.date}</span>
         <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">{match.time} TR</span>
@@ -50,31 +50,31 @@ export function MiniMatchCard({ match }: { match: Match }) {
       {isCompleted ? (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1">
-            <Link href={`/team/${match.homeTeamId}`}><img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover hover:opacity-80 transition-opacity cursor-pointer" /></Link>
-            <Link href={`/team/${match.homeTeamId}`} className="font-semibold text-gray-900 dark:text-white text-sm truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{home.name}</Link>
+            <img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover" />
+            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{home.name}</span>
           </div>
           <div className="px-3">
             <span className="text-xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</span>
           </div>
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <Link href={`/team/${match.awayTeamId}`} className="font-semibold text-gray-900 dark:text-white text-sm truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{away.name}</Link>
-            <Link href={`/team/${match.awayTeamId}`}><img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover hover:opacity-80 transition-opacity cursor-pointer" /></Link>
+            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{away.name}</span>
+            <img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover" />
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1">
-            <Link href={`/team/${match.homeTeamId}`}><img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover hover:opacity-80 transition-opacity cursor-pointer" /></Link>
-            <Link href={`/team/${match.homeTeamId}`} className="font-semibold text-gray-900 dark:text-white text-sm truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{home.name}</Link>
+            <img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover" />
+            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{home.name}</span>
           </div>
           <div className="px-3 text-gray-400 dark:text-gray-500 font-bold text-lg">vs</div>
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <Link href={`/team/${match.awayTeamId}`} className="font-semibold text-gray-900 dark:text-white text-sm truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{away.name}</Link>
-            <Link href={`/team/${match.awayTeamId}`}><img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover hover:opacity-80 transition-opacity cursor-pointer" /></Link>
+            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{away.name}</span>
+            <img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover" />
           </div>
         </div>
       )}
-    </div>
+    </a>
   );
 }
 
@@ -125,61 +125,66 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
 
   return (
     <div className="match-card relative">
-      {onToggleFavorite && (
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         <button
-          onClick={() => onToggleFavorite(match.id)}
-          className={`absolute top-4 right-4 text-lg transition-all ${isFavorite ? 'text-yellow-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'}`}
+          onClick={() => onToggleFavorite ? onToggleFavorite(match.id) : undefined}
+          className={`text-lg transition-all ${isFavorite ? 'text-yellow-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'}`}
           title={isFavorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
         >
           {isFavorite ? '⭐' : '☆'}
         </button>
-      )}
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className={`stage-badge border ${getStageStyle(match.stage)}`}>{match.stage}</span>
-        </div>
-        {match.group && (
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">{match.group}. Grup</span>
-        )}
       </div>
 
-      <div className="flex items-center justify-between py-4">
-        <div className="flex-1 flex items-center justify-center gap-6">
-          <div className="flex flex-col items-center gap-2 min-w-[80px]">
-            <FlagImg code={match.homeTeamId} />
-            <Link href={`/team/${match.homeTeamId}`} className="font-bold text-gray-900 dark:text-white text-sm text-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{homeTeam.name}</Link>
+      <a href={`/match/${match.id}`} className="block hover:opacity-[0.97] transition-opacity">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className={`stage-badge border ${getStageStyle(match.stage)}`}>{match.stage}</span>
           </div>
+          {match.group && !isFavorite && (
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg mr-8">{match.group}. Grup</span>
+          )}
+          {match.group && isFavorite && (
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">{match.group}. Grup</span>
+          )}
+        </div>
 
-          <div className="px-2 flex-shrink-0">
-            {isCompleted ? (
-              <div className="text-center">
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
-              </div>
-            ) : (
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{match.time}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Başlangıç
-                  <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium ml-1">TR</span>
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center justify-between py-4">
+          <div className="flex-1 flex items-center justify-center gap-6">
+            <div className="flex flex-col items-center gap-2 min-w-[80px]">
+              <FlagImg code={match.homeTeamId} />
+              <Link href={`/team/${match.homeTeamId}`} className="font-bold text-gray-900 dark:text-white text-sm text-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{homeTeam.name}</Link>
+            </div>
 
-          <div className="flex flex-col items-center gap-2 min-w-[80px]">
-            <FlagImg code={match.awayTeamId} />
-            <Link href={`/team/${match.awayTeamId}`} className="font-bold text-gray-900 dark:text-white text-sm text-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{awayTeam.name}</Link>
+            <div className="px-2 flex-shrink-0">
+              {isCompleted ? (
+                <div className="text-center">
+                  <p className="text-3xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{match.time}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Başlangıç
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium ml-1">TR</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center gap-2 min-w-[80px]">
+              <FlagImg code={match.awayTeamId} />
+              <Link href={`/team/${match.awayTeamId}`} className="font-bold text-gray-900 dark:text-white text-sm text-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{awayTeam.name}</Link>
+            </div>
           </div>
         </div>
-      </div>
+      </a>
 
       {prediction && !isCompleted && (
         <div className="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between text-sm">
           <span className="text-amber-700 dark:text-amber-400 font-medium">🎯 Tahminin:</span>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-amber-800 dark:text-amber-300">{prediction.homeScore} - {prediction.awayScore}</span>
+            <a href={`/match/${match.id}`} className="font-bold text-amber-800 dark:text-amber-300 hover:underline">{prediction.homeScore} - {prediction.awayScore}</a>
             {onDeletePrediction && (
               <button onClick={() => onDeletePrediction(match.id)} className="text-red-400 hover:text-red-600 text-xs underline ml-2">Sil</button>
             )}
@@ -244,7 +249,7 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+      <a href={`/match/${match.id}`} className="block mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:opacity-80 transition-opacity">
         <div className="flex items-center justify-between mb-2">
           <span className="flex items-center gap-1.5">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -266,7 +271,7 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
           <span className="text-gray-300 dark:text-gray-600">•</span>
           <span className="text-gray-700 dark:text-gray-300 font-semibold">{match.country}</span>
         </div>
-      </div>
+      </a>
 
       <div className="mt-3 flex gap-2 flex-wrap">
         {!isCompleted && onPredict && !isEditingPred && (
@@ -289,6 +294,9 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
             🔔 Hatırlat
           </button>
         )}
+        <a href={`/match/${match.id}`} className="btn-secondary text-sm flex items-center gap-1">
+          📋 Detay
+        </a>
       </div>
     </div>
   );
