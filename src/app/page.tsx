@@ -269,7 +269,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-lg">⏰</div>
@@ -305,6 +305,8 @@ export default function Home() {
                   <div className="space-y-3">{recentCompleted.map(m => <MiniMatchCard key={m.id} match={m} />)}</div>
                 )}
               </div>
+
+              <NewsSection />
             </div>
 
             {nextUpcoming.length > 0 && upcoming24h.length === 0 && (
@@ -321,8 +323,6 @@ export default function Home() {
                 </div>
               </div>
             )}
-
-            <NewsSection />
 
             <div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Tarih Seç</h3>
