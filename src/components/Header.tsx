@@ -29,6 +29,7 @@ const tabs = [
   const iconTabs = [
     { id: 'favorites', label: 'Favoriler', icon: 'star' },
     { id: 'notifications', label: 'Bildirimler', icon: 'bell' },
+    { id: 'leagues', label: 'Ligler', icon: 'trophy' },
   ];
 
   const renderIcon = (name: string, size: string = 'w-[18px] h-[18px]') => {
@@ -52,6 +53,8 @@ const tabs = [
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.822-.755 1.688-1.54 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.784.57-1.838-.296-1.54-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.03 10.1c-.783-.57-.38-1.81.588-1.81h4.915a1 1 0 00.95-.69l1.519-4.674z" /></svg>;
       case 'bell':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.657V5a2 2 0 10-4 0v.343A6.002 6.002 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9" /></svg>;
+      case 'trophy':
+        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4m14 0h-4m2 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7m4 10v2m6-2v2M9 14h6" />;</svg>;
       default:
         return null;
     }

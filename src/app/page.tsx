@@ -13,6 +13,7 @@ import ScorerEntryForm from '@/components/ScorerEntryForm';
 import SharePredictionCard from '@/components/SharePredictionCard';
 import BracketView from '@/components/BracketView';
 import CompareModal from '@/components/CompareModal';
+import LeaguesView from '@/components/LeaguesView';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
@@ -712,6 +713,8 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {activeTab === 'leagues' && <LeaguesView />}
 
         {activeTab === 'favorites' && (
           <div className="space-y-6">

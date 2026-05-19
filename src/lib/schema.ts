@@ -55,9 +55,26 @@ export const scorers = sqliteTable('scorers', {
   createdAt: text('created_at').notNull(),
 });
 
+export const leagues = sqliteTable('leagues', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  code: text('code').notNull(),
+  ownerId: text('owner_id').references(() => users.id).notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const leagueMembers = sqliteTable('league_members', {
+  id: text('id').primaryKey(),
+  leagueId: text('league_id').references(() => leagues.id).notNull(),
+  userId: text('user_id').references(() => users.id).notNull(),
+  joinedAt: text('joined_at').notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Prediction = typeof predictions.$inferSelect;
 export type MatchScore = typeof matchScores.$inferSelect;
 export type UserNotification = typeof userNotifications.$inferSelect;
 export type Favorite = typeof favorites.$inferSelect;
 export type Scorer = typeof scorers.$inferSelect;
+export type League = typeof leagues.$inferSelect;
+export type LeagueMember = typeof leagueMembers.$inferSelect;
