@@ -9,8 +9,10 @@ import GroupStandings from '@/components/GroupStandings';
 import NotificationsList from '@/components/NotificationsList';
 import NotificationModal from '@/components/NotificationModal';
 import NewsSection from '@/components/NewsSection';
+import ScorerEntryForm from '@/components/ScorerEntryForm';
+import SharePredictionCard from '@/components/SharePredictionCard';
 import { matches as allMatches } from '@/data/fixtures';
-import { getTeam } from '@/data/teams';
+import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
 
 export default function Home() {
@@ -24,6 +26,7 @@ export default function Home() {
   const [notificationModal, setNotificationModal] = useState<{ matchId: string; matchName: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; close: number; missed: number; points: number }[]>([]);
+  const [scorerLeaderboard, setScorerLeaderboard] = useState<{ teamId: string; playerName: string; goals: number; penalties: number; ownGoals: number }[]>([]);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
 
@@ -76,6 +79,11 @@ export default function Home() {
   useEffect(() => {
     if (activeTab !== 'leaderboard') return;
     fetch('/api/leaderboard').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setLeaderboard(data.leaderboard || [])).catch(() => {});
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'scorers') return;
+    fetch('/api/scorers').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setScorerLeaderboard(data.leaderboard || [])).catch(() => {});
   }, [activeTab]);
 
   const saveScoreToDB = useCallback(async (matchId: string, homeScore: number, awayScore: number) => {
@@ -421,6 +429,75 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === 'scorers' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-2xl">👟</div>
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Gol Kralı</h2>
+                <p className="text-gray-500 dark:text-gray-400">Turnuvanın en golcü oyuncuları</p>
+              </div>
+            </div>
+
+            {scorerLeaderboard.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Henüz gol verisi yok</h3>
+                <p className="text-gray-500 dark:text-gray-400">Skor girişi yapıldığında gol krallığı burada görünür</p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="text-left py-4 px-4">#</th>
+                        <th className="text-left py-4 px-4">Oyuncu</th>
+                        <th className="text-center py-4 px-2">Takım</th>
+                        <th className="text-center py-4 px-2">Gol</th>
+                        <th className="text-center py-4 px-4">Penaltı</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scorerLeaderboard.map((entry, index) => {
+                        const team = getTeam(entry.teamId);
+                        return (
+                          <tr key={`${entry.teamId}-${entry.playerName}`} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${index < 3 ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
+                            <td className="py-4 px-4">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${index === 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : index === 1 ? 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' : index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                                {index + 1}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{entry.playerName}</td>
+                            <td className="text-center py-4 px-2">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <img src={team.flag || getFlagUrl(entry.teamId)} alt={team.name} className="w-5 h-3.5 rounded object-cover" />
+                                <span className="text-xs text-gray-600 dark:text-gray-300">{team.name}</span>
+                              </div>
+                            </td>
+                            <td className="text-center py-4 px-2">
+                              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{entry.goals}</span>
+                            </td>
+                            <td className="text-center py-4 px-4 text-gray-500 dark:text-gray-400">
+                              {entry.penalties > 0 ? entry.penalties : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {user && (
+              <ScorerEntryForm matches={matches} onSubmitted={() => {
+                fetch('/api/scorers').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setScorerLeaderboard(data.leaderboard || [])).catch(() => {});
+              }} />
+            )}
+          </div>
+        )}
+
         {activeTab === 'groups' && (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
@@ -500,12 +577,24 @@ export default function Home() {
 
         {activeTab === 'predictions' && (
           <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-2xl">🎯</div>
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Tahminlerim</h2>
-                <p className="text-gray-500 dark:text-gray-400">Maç sonuçlarını tahmin edin ve skorlarıyla karşılaştırın</p>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-2xl">🎯</div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white">Tahminlerim</h2>
+                  <p className="text-gray-500 dark:text-gray-400">Maç sonuçlarını tahmin edin ve skorlarıyla karşılaştırın</p>
+                </div>
               </div>
+              {user && Object.keys(predictions).length > 0 && (
+                <SharePredictionCard
+                  userName={user.name}
+                  predictions={predictions}
+                  matches={matches}
+                  exact={predStats.exact}
+                  close={predStats.close}
+                  points={predStats.exact * 3 + predStats.close}
+                />
+              )}
             </div>
 
             {!user ? (

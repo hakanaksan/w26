@@ -19,6 +19,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const tabs = [
     { id: 'fixtures', label: 'Ana Sayfa', icon: '🏠' },
     { id: 'results', label: 'Sonuçlar', icon: '⚽' },
+    { id: 'scorers', label: 'Gol Kralı', icon: '👟' },
     { id: 'groups', label: 'Gruplar', icon: '📊' },
     { id: 'leaderboard', label: 'Sıralama', icon: '🏆' },
     { id: 'predictions', label: 'Tahminler', icon: '🎯' },

@@ -44,8 +44,20 @@ export const favorites = sqliteTable('favorites', {
   createdAt: text('created_at').notNull(),
 });
 
+export const scorers = sqliteTable('scorers', {
+  id: text('id').primaryKey(),
+  matchId: text('match_id').references(() => matchScores.matchId).notNull(),
+  teamId: text('team_id').notNull(),
+  playerName: text('player_name').notNull(),
+  minute: integer('minute'),
+  isPenalty: integer('is_penalty').default(0),
+  isOwnGoal: integer('is_own_goal').default(0),
+  createdAt: text('created_at').notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type Prediction = typeof predictions.$inferSelect;
 export type MatchScore = typeof matchScores.$inferSelect;
 export type UserNotification = typeof userNotifications.$inferSelect;
 export type Favorite = typeof favorites.$inferSelect;
+export type Scorer = typeof scorers.$inferSelect;

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Header from '@/components/Header';
 import { matches as allMatches } from '@/data/fixtures';
-import { getTeam, getFlagUrl, groups, teams as allTeams } from '@/data/teams';
+import { getTeam, getFlagUrl, groups, teams as allTeams, TeamInfo } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
 
 export default function TeamPage() {
@@ -16,14 +16,14 @@ export default function TeamPage() {
 
   const team = getTeam(code);
   const groupInfo = groups.find(g => g.id === team.groupId);
-  const teamMatches = allMatches.filter(m => m.homeTeamId === code || m.awayTeamId === code);
+  const groupTeams = Object.entries(allTeams).filter(([, t]) => t.groupId === team.groupId);
 
   const [localMatches, setLocalMatches] = useState(allMatches);
   const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
-  const [activeTab, setActiveTab] = useState('fixtures');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const { mergedMatches: matches } = useLiveScores(localMatches);
-  const teamLiveMatches = matches.filter(m => m.homeTeamId === code || m.awayTeamId === code);
+  const teamMatches = matches.filter(m => m.homeTeamId === code || m.awayTeamId === code);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,23 +53,38 @@ export default function TeamPage() {
     }
   }, [token]);
 
-  useEffect(() => {
-    fetch('/api/scores').then(r => r.ok ? r.json() : { scores: {} }).then(data => {
-      const scores: Record<string, { homeScore: number; awayScore: number; isCompleted: boolean }> = data.scores || {};
-      if (Object.keys(scores).length > 0) {
-        const updated = allMatches.map(m => {
-          const s = scores[m.id];
-          if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
-          return m;
-        });
-        setLocalMatches(updated);
-      }
-    }).catch(() => {});
-  }, []);
+  const completedMatches = teamMatches.filter(m => m.isCompleted || m.homeScore !== undefined);
+  const upcomingMatches = teamMatches.filter(m => !m.isCompleted && m.homeScore === undefined);
 
-  const completedMatches = teamLiveMatches.filter(m => m.isCompleted || m.homeScore !== undefined);
-  const upcomingMatches = teamLiveMatches.filter(m => !m.isCompleted && m.homeScore === undefined);
-  const groupTeams = Object.entries(allTeams).filter(([, t]) => t.groupId === team.groupId);
+  const goalsFor = completedMatches.reduce((sum, m) => {
+    return sum + (m.homeTeamId === code ? (m.homeScore || 0) : (m.awayScore || 0));
+  }, 0);
+  const goalsAgainst = completedMatches.reduce((sum, m) => {
+    return sum + (m.homeTeamId === code ? (m.awayScore || 0) : (m.homeScore || 0));
+  }, 0);
+  const wins = completedMatches.filter(m => {
+    const isHome = m.homeTeamId === code;
+    return isHome ? (m.homeScore || 0) > (m.awayScore || 0) : (m.awayScore || 0) > (m.homeScore || 0);
+  }).length;
+  const draws = completedMatches.filter(m => m.homeScore === m.awayScore).length;
+  const losses = completedMatches.length - wins - draws;
+
+  const standings = groupTeams.map(([, t]) => {
+    const tMatches = matches.filter(m => (m.homeTeamId === t.code || m.awayTeamId === t.code) && m.group === team.groupId && (m.isCompleted || m.homeScore !== undefined));
+    let pts = 0, gf = 0, ga = 0, w = 0, d = 0, l = 0;
+    tMatches.forEach(m => {
+      const isHome = m.homeTeamId === t.code;
+      const scored = isHome ? (m.homeScore || 0) : (m.awayScore || 0);
+      const conceded = isHome ? (m.awayScore || 0) : (m.homeScore || 0);
+      gf += scored; ga += conceded;
+      if (scored > conceded) { w++; pts += 3; }
+      else if (scored === conceded) { d++; pts += 1; }
+      else { l++; }
+    });
+    return { ...t, pts, gf, ga, w, d, l, played: tMatches.length };
+  }).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+
+  const teamStanding = standings.findIndex(s => s.code === code) + 1;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -78,175 +93,296 @@ export default function TeamPage() {
 
   const getStageStyle = (stage: string) => {
     switch (stage) {
-      case 'Final': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'Yarı Final': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'Çeyrek Final': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Son 16': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'Son 32': return 'bg-cyan-100 text-cyan-700 border-cyan-200';
-      case 'Üçüncülük': return 'bg-orange-100 text-orange-700 border-orange-200';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200';
+      case 'Final': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+      case 'Yarı Final': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+      case 'Çeyrek Final': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      case 'Son 16': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+      case 'Son 32': return 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800';
+      case 'Üçüncülük': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800';
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600';
     }
   };
 
   if (code === 'TBD' || !team.flag) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <Header activeTab="fixtures" onTabChange={() => {}} />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500">Takım bulunamadı.</p>
+          <p className="text-gray-500 dark:text-gray-400">Takım bulunamadı.</p>
           <button onClick={() => router.push('/')} className="btn-primary mt-4">Ana Sayfaya Dön</button>
         </div>
       </div>
     );
   }
 
+  const tabs = [
+    { id: 'overview', label: 'Genel Bakış' },
+    { id: 'squad', label: 'Kadro' },
+    { id: 'matches', label: 'Maçlar' },
+    { id: 'group', label: 'Grup' },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
       <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 mb-8">
-          <div className="flex items-center gap-6">
-            <img src={team.flag} alt={team.name} className="w-24 h-16 rounded-xl shadow-lg object-cover" />
-            <div>
-              <h1 className="text-3xl font-black">{team.name}</h1>
-              {groupInfo && <p className="text-blue-200 mt-1">{groupInfo.name}</p>}
-              <p className="text-blue-200 text-sm mt-1">{completedMatches.length} oynanmış • {upcomingMatches.length} kalan maç</p>
+        <div className="relative rounded-3xl overflow-hidden mb-8 shadow-xl" style={{ background: `linear-gradient(135deg, ${team.colors.primary}, ${team.colors.primary}dd, ${team.colors.secondary}88)` }}>
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="relative p-8 text-white">
+            <div className="flex items-center gap-6">
+              <div className="w-24 h-16 bg-white/20 backdrop-blur-sm rounded-2xl p-1 flex items-center justify-center">
+                <img src={team.flag} alt={team.name} className="w-full h-full rounded-xl object-cover" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black">{team.name}</h1>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  {groupInfo && <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">{groupInfo.name}</span>}
+                  {teamStanding > 0 && <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">Grup {teamStanding}. sıra</span>}
+                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">FIFA #{team.ranking}</span>
+                </div>
+                {team.coach && <p className="text-white/80 text-sm mt-1">Teknik Direktör: {team.coach}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-3 mt-6">
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+                <p className="text-2xl font-black">{completedMatches.length}</p>
+                <p className="text-white/70 text-xs">Oynanan</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+                <p className="text-2xl font-black">{wins}</p>
+                <p className="text-white/70 text-xs">Galibiyet</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+                <p className="text-2xl font-black">{goalsFor}</p>
+                <p className="text-white/70 text-xs">Atılan Gol</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+                <p className="text-2xl font-black">{goalsAgainst}</p>
+                <p className="text-white/70 text-xs">Yenilen Gol</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {groupInfo && (
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8">
-            <h3 className="font-bold text-gray-900 mb-4">{groupInfo.name} Takımları</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {groupTeams.map(([code, t]) => (
-                <button
-                  key={code}
-                  onClick={() => router.push(`/team/${code}`)}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all ${code === params.code ? 'bg-blue-50 border-2 border-blue-500' : 'bg-gray-50 border border-gray-200 hover:border-blue-300'}`}
-                >
-                  <img src={t.flag} alt={t.name} className="w-8 h-6 rounded object-cover" />
-                  <span className="font-medium text-sm text-gray-900">{t.name}</span>
-                </button>
-              ))}
-            </div>
+        <div className="flex gap-2 mb-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/50' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {completedMatches.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-bold text-gray-900 dark:text-white mb-4">Sonuçlar</h3>
+                <div className="space-y-3">
+                  {completedMatches.sort((a, b) => b.date.localeCompare(a.date)).map(match => {
+                    const homeTeam = getTeam(match.homeTeamId);
+                    const awayTeam = getTeam(match.awayTeamId);
+                    const isHome = match.homeTeamId === code;
+                    const teamScore = isHome ? match.homeScore : match.awayScore;
+                    const oppScore = isHome ? match.awayScore : match.homeScore;
+                    const result = teamScore! > oppScore! ? 'G' : teamScore! < oppScore! ? 'M' : 'B';
+                    const resultColor = result === 'G' ? 'bg-emerald-500' : result === 'M' ? 'bg-red-500' : 'bg-amber-500';
+                    return (
+                      <button key={match.id} onClick={() => router.push(`/match/${match.id}`)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white ${resultColor}`}>{result}</div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{isHome ? awayTeam.name : homeTeam.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{isHome ? 'Ev' : 'Deplasman'} • {formatDate(match.date)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {upcomingMatches.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-bold text-gray-900 dark:text-white mb-4">Yaklaşan Maçlar</h3>
+                <div className="space-y-3">
+                  {upcomingMatches.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5).map(match => {
+                    const opp = match.homeTeamId === code ? getTeam(match.awayTeamId) : getTeam(match.homeTeamId);
+                    const isHome = match.homeTeamId === code;
+                    return (
+                      <button key={match.id} onClick={() => router.push(`/match/${match.id}`)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
+                        <img src={opp.flag || getFlagUrl(match.homeTeamId === code ? match.awayTeamId : match.homeTeamId)} alt={opp.name} className="w-10 h-7 rounded object-cover" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{isHome ? 'Ev' : 'Deplasman'}: {opp.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(match.date)} • {match.time} TR</p>
+                        </div>
+                        <span className={`stage-badge border text-xs ${getStageStyle(match.stage)}`}>{match.stage}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {completedMatches.length === 0 && upcomingMatches.length === 0 && (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Henüz maç verisi yok</p>
+              </div>
+            )}
           </div>
         )}
 
-        <div className="flex gap-2 mb-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          <button onClick={() => setActiveTab('fixtures')} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'fixtures' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
-            Tüm Maçlar ({teamLiveMatches.length})
-          </button>
-          <button onClick={() => setActiveTab('completed')} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'completed' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
-            Biten ({completedMatches.length})
-          </button>
-          <button onClick={() => setActiveTab('upcoming')} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === 'upcoming' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
-            Yaklaşan ({upcomingMatches.length})
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {(activeTab === 'fixtures' ? teamLiveMatches : activeTab === 'completed' ? completedMatches : upcomingMatches).length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
-              <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
-              <p className="text-gray-500 text-lg">Bu kategoride maç yok</p>
+        {activeTab === 'squad' && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: team.colors.primary + '22' }}>
+                👕
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white">Kadro</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{team.name} • {team.squad.length} oyuncu</p>
+              </div>
             </div>
-          ) : (
-            (activeTab === 'fixtures' ? teamLiveMatches : activeTab === 'completed' ? completedMatches : upcomingMatches)
-              .sort((a, b) => a.date.localeCompare(b.date))
-              .map(match => {
+            {team.squad.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {team.squad.map((player, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: team.colors.primary }}>
+                      {i + 1}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{player}</span>
+                    {i === 0 && <span className="ml-auto text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">GK</span>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">Kadro bilgisi mevcut değil</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'matches' && (
+          <div className="space-y-4">
+            <div className="flex gap-2 mb-4">
+              <button onClick={() => setActiveTab('matches')} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Tümü ({teamMatches.length})</button>
+            </div>
+            {teamMatches.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">⚽</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Maç bulunmuyor</p>
+              </div>
+            ) : (
+              teamMatches.sort((a, b) => a.date.localeCompare(b.date)).map(match => {
                 const homeTeam = getTeam(match.homeTeamId);
                 const awayTeam = getTeam(match.awayTeamId);
-                const pred = predictions[match.id];
                 const isCompleted = match.isCompleted || match.homeScore !== undefined;
-                const isTeamHome = match.homeTeamId === code;
-
                 return (
-                  <div key={match.id} className="match-card">
+                  <button key={match.id} onClick={() => router.push(`/match/${match.id}`)} className="w-full text-left match-card">
                     <div className="flex items-center justify-between mb-3">
                       <span className={`stage-badge border ${getStageStyle(match.stage)}`}>{match.stage}</span>
-                      {match.group && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{match.group}. Grup</span>}
+                      {match.group && <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">{match.group}. Grup</span>}
                     </div>
-
                     <div className="flex items-center justify-between py-3">
                       <div className="flex items-center gap-3 flex-1">
-                        <img src={homeTeam.flag || getFlagUrl(match.homeTeamId)} alt={homeTeam.name} className="w-12 h-8 rounded object-cover" onClick={() => match.homeTeamId !== 'TBD' && router.push(`/team/${match.homeTeamId}`)} />
-                        <button onClick={() => match.homeTeamId !== 'TBD' && router.push(`/team/${match.homeTeamId}`)} className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors text-left">{homeTeam.name}</button>
+                        <img src={homeTeam.flag || getFlagUrl(match.homeTeamId)} alt={homeTeam.name} className="w-12 h-8 rounded object-cover" />
+                        <span className="font-bold text-gray-900 dark:text-white text-sm">{homeTeam.name}</span>
                       </div>
                       <div className="px-4 flex-shrink-0">
                         {isCompleted ? (
                           <div className="text-center">
-                            <p className="text-2xl font-black text-gray-900">{match.homeScore} - {match.awayScore}</p>
-                            <p className="text-xs text-emerald-600 font-medium mt-1">Maç Bitti</p>
+                            <p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
                           </div>
                         ) : (
                           <div className="text-center">
-                            <p className="text-xl font-bold text-blue-600">{match.time}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">TR</span>
+                            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{match.time}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">TR</span>
                             </p>
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-3 flex-1 justify-end">
-                        <button onClick={() => match.awayTeamId !== 'TBD' && router.push(`/team/${match.awayTeamId}`)} className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors text-right">{awayTeam.name}</button>
-                        <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt={awayTeam.name} className="w-12 h-8 rounded object-cover" onClick={() => match.awayTeamId !== 'TBD' && router.push(`/team/${match.awayTeamId}`)} />
+                        <span className="font-bold text-gray-900 dark:text-white text-sm">{awayTeam.name}</span>
+                        <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt={awayTeam.name} className="w-12 h-8 rounded object-cover" />
                       </div>
                     </div>
-
-                    {isCompleted && pred && (
-                      <div className="mb-3 px-3 py-2 rounded-lg flex items-center justify-between text-sm border">
-                        <span className="font-medium">🎯 Tahminin:</span>
-                        <div className="flex items-center gap-2">
-                          <span className={pred.homeScore === match.homeScore && pred.awayScore === match.awayScore ? 'text-green-600 font-bold' : 'text-red-500 font-bold'}>
-                            {pred.homeScore} - {pred.awayScore}
-                          </span>
-                          {pred.homeScore === match.homeScore && pred.awayScore === match.awayScore ? (
-                            <span className="text-green-600 text-xs font-medium bg-green-100 px-2 py-0.5 rounded">✓ Tam isabet!</span>
-                          ) : pred.homeScore === match.homeScore || pred.awayScore === match.awayScore ? (
-                            <span className="text-yellow-600 text-xs font-medium bg-yellow-100 px-2 py-0.5 rounded">~ Yakın</span>
-                          ) : (
-                            <span className="text-red-500 text-xs font-medium bg-red-100 px-2 py-0.5 rounded">✗ Isabet yok</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {!isCompleted && pred && (
-                      <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between text-sm">
-                        <span className="text-amber-700 font-medium">🎯 Tahminin:</span>
-                        <span className="font-bold text-amber-800">{pred.homeScore} - {pred.awayScore}</span>
-                      </div>
-                    )}
-
-                    <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-500">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="flex items-center gap-1.5">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                          {formatDate(match.date)}
-                        </span>
-                        <span className="flex items-center gap-1.5 font-medium text-gray-700">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {match.time} <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">TR</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
-                        <span className="flex items-center gap-1.5">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                          <span className="text-gray-700 font-medium">{match.venue}</span>
-                        </span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-600">{match.city}</span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-700 font-semibold">{match.country}</span>
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center justify-between">
+                        <span>{formatDate(match.date)}</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{match.venue}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'group' && groupInfo && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-bold text-gray-900 dark:text-white">{groupInfo.name} Puan Durumu</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-700 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4">#</th>
+                      <th className="text-left py-3 px-4">Takım</th>
+                      <th className="text-center py-3 px-2">O</th>
+                      <th className="text-center py-3 px-2">G</th>
+                      <th className="text-center py-3 px-2">B</th>
+                      <th className="text-center py-3 px-2">M</th>
+                      <th className="text-center py-3 px-2">AG</th>
+                      <th className="text-center py-3 px-2">YG</th>
+                      <th className="text-center py-3 px-2">Averaj</th>
+                      <th className="text-center py-3 px-4">Puan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((team, i) => (
+                      <tr key={team.code} className={`border-t border-gray-100 dark:border-gray-700 ${team.code === code ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                        <td className="py-3 px-4">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${i < 2 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                            {i + 1}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <button onClick={() => router.push(`/team/${team.code}`)} className="flex items-center gap-2 group">
+                            <img src={team.flag} alt={team.name} className="w-7 h-5 rounded object-cover" />
+                            <span className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 text-sm">{team.name}</span>
+                          </button>
+                        </td>
+                        <td className="text-center py-3 px-2 text-sm text-gray-600 dark:text-gray-300">{team.played}</td>
+                        <td className="text-center py-3 px-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">{team.w}</td>
+                        <td className="text-center py-3 px-2 text-sm text-amber-600 dark:text-amber-400">{team.d}</td>
+                        <td className="text-center py-3 px-2 text-sm text-red-500 dark:text-red-400">{team.l}</td>
+                        <td className="text-center py-3 px-2 text-sm text-gray-600 dark:text-gray-300">{team.gf}</td>
+                        <td className="text-center py-3 px-2 text-sm text-gray-600 dark:text-gray-300">{team.ga}</td>
+                        <td className="text-center py-3 px-2 text-sm font-medium">{team.gf - team.ga > 0 ? `+${team.gf - team.ga}` : team.gf - team.ga}</td>
+                        <td className="text-center py-3 px-4 text-sm font-black text-blue-600 dark:text-blue-400">{team.pts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {groupTeams.map(([, t]) => (
+                <button key={t.code} onClick={() => router.push(`/team/${t.code}`)}
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all border ${t.code === code ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'}`}>
+                  <img src={t.flag} alt={t.name} className="w-8 h-6 rounded object-cover" />
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{t.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 text-center">
           <button onClick={() => router.push('/')} className="btn-secondary px-8 py-3">
