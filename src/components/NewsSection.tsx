@@ -90,31 +90,24 @@ export default function NewsSection() {
         <a href="/news/all" className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline hidden sm:block">Tümünü Gör →</a>
       </div>
 
-      <div className="space-y-1 max-h-[420px] overflow-y-auto pr-1 scrollbar-hide">
+      <div className="space-y-0.5 max-h-[420px] overflow-y-auto pr-1 scrollbar-hide">
         {news.slice(0, 8).map((item) => (
           <a
             key={item.id}
             href={`/news/${item.id}`}
-            className="flex gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+            className="block p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
           >
-            {item.imageUrl ? (
-              <img src={item.imageUrl} alt="" className="w-20 h-16 rounded-xl object-cover flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            ) : (
-              <div className="w-20 h-16 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">⚽</div>
-            )}
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {item.title}
-              </h4>
-              <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {item.source && <span className="font-medium">{item.source}</span>}
-                {item.pubDate && (
-                  <>
-                    {item.source && <span>•</span>}
-                    <span>{formatDate(item.pubDate)}</span>
-                  </>
-                )}
-              </div>
+            <h4 className="font-medium text-gray-900 dark:text-white text-sm leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {item.title}
+            </h4>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {item.source && <span className="font-medium">{item.source}</span>}
+              {item.pubDate && (
+                <>
+                  {item.source && <span>•</span>}
+                  <span>{formatDate(item.pubDate)}</span>
+                </>
+              )}
             </div>
           </a>
         ))}
