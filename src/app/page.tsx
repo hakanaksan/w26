@@ -448,6 +448,7 @@ export default function Home() {
                       <th className="text-left py-4 px-4">#</th>
                       <th className="text-left py-4 px-4">Kullanıcı</th>
                       <th className="text-center py-4 px-2">Tahmin</th>
+                      <th className="text-center py-4 px-2">Değer.</th>
                       <th className="text-center py-4 px-2">Tam</th>
                       <th className="text-center py-4 px-2">Yakın</th>
                       <th className="text-center py-4 px-2">Isabet Yok</th>
@@ -457,7 +458,7 @@ export default function Home() {
                   <tbody>
                     {leaderboard.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-12 text-gray-400 dark:text-gray-500">
+                        <td colSpan={8} className="text-center py-12 text-gray-400 dark:text-gray-500">
                           <p className="text-3xl mb-2">🏆</p>
                           <p className="text-sm">Henüz sıralama yok</p>
                           <p className="text-xs mt-1">Tahmin yapıldığında burada görünür</p>
@@ -472,7 +473,8 @@ export default function Home() {
                             </div>
                           </td>
                           <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{entry.name}</td>
-                          <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{entry.completedPredictions}</td>
+                          <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{entry.totalPredictions}</td>
+                          <td className="text-center py-4 px-2 text-gray-500 dark:text-gray-400">{entry.completedPredictions}</td>
                           <td className="text-center py-4 px-2 text-emerald-600 dark:text-emerald-400 font-medium">{entry.exact}</td>
                           <td className="text-center py-4 px-2 text-amber-600 dark:text-amber-400">{entry.close}</td>
                           <td className="text-center py-4 px-2 text-red-500 dark:text-red-400">{entry.missed}</td>

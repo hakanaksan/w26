@@ -51,7 +51,7 @@ export async function GET() {
       };
     });
 
-    leaderboard.sort((a, b) => b.points - a.points || a.completedPredictions - b.completedPredictions);
+    leaderboard.sort((a, b) => b.points - a.points || b.totalPredictions - a.totalPredictions);
 
     return NextResponse.json({ leaderboard });
   } catch (err) {
