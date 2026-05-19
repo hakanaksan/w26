@@ -71,9 +71,9 @@ function extractImage(html: string): string | null {
   return null;
 }
 
-function makeId(title: string): string {
-  const hash = title.toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi, '').substring(0, 40);
-  return hash || Buffer.from(title).toString('base64url').substring(0, 20);
+function makeId(title: string, link: string): string {
+  const raw = title + '|' + link;
+  return Buffer.from(raw, 'utf-8').toString('base64url').substring(0, 30);
 }
 
 async function fetchFeed(url: string): Promise<NewsItem[]> {
@@ -110,7 +110,7 @@ async function fetchFeed(url: string): Promise<NewsItem[]> {
       const content = cleanText(rawDesc);
       const imageUrl = extractImage(rawDesc);
 
-      items.push({ id: makeId(title), title, link, pubDate, source, description, imageUrl, content });
+      items.push({ id: makeId(title, link), title, link, pubDate, source, description, imageUrl, content });
     }
     return items;
   } catch {
