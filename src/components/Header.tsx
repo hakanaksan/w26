@@ -16,8 +16,9 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const tabs = [
+const tabs = [
     { id: 'fixtures', label: 'Ana Sayfa', icon: 'home' },
+    { id: 'bracket', label: 'Turnuva', icon: 'bracket' },
     { id: 'results', label: 'Sonuçlar', icon: 'results' },
     { id: 'scorers', label: 'Gol Kralı', icon: 'scorers' },
     { id: 'groups', label: 'Gruplar', icon: 'groups' },
@@ -45,6 +46,8 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M5 7H3a1 1 0 00-1 1v10a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H5zm6-3v16m0 0h2a1 1 0 001-1V4a1 1 0 00-1-1h-2zm6 6v10m0 0h2a1 1 0 001-1v-4a1 1 0 00-1-1h-2z" /></svg>;
       case 'predictions':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
+      case 'bracket':
+        return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h6M4 18h6M14 6h6M14 18h6M10 6v12M14 6v12" /></svg>;
       case 'star':
         return <svg className={s} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.822-.755 1.688-1.54 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.784.57-1.838-.296-1.54-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.03 10.1c-.783-.57-.38-1.81.588-1.81h4.915a1 1 0 00.95-.69l1.519-4.674z" /></svg>;
       case 'bell':
