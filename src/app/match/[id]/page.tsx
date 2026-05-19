@@ -21,6 +21,13 @@ export default function MatchDetailPage() {
   const [homePred, setHomePred] = useState('');
   const [awayPred, setAwayPred] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [matchEvents, setMatchEvents] = useState<{ id: string; teamId: string; playerName: string; minute: number | null; isPenalty: boolean; isOwnGoal: boolean }[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventPlayer, setEventPlayer] = useState('');
+  const [eventMinute, setEventMinute] = useState('');
+  const [eventTeam, setEventTeam] = useState('');
+  const [eventIsPenalty, setEventIsPenalty] = useState(false);
+  const [eventIsOwnGoal, setEventIsOwnGoal] = useState(false);
 
   const { mergedMatches: matches } = useLiveScores(localMatches);
   const liveMatch = matches.find(m => m.id === matchId);
@@ -60,6 +67,14 @@ export default function MatchDetailPage() {
       .then(data => setIsFavorite((data.favorites || []).includes(matchId)))
       .catch(() => {});
   }, [token, matchId]);
+
+  useEffect(() => {
+    if (!isCompleted) return;
+    fetch(`/api/scorers`).then(r => r.ok ? r.json() : { scorers: [] }).then(data => {
+      const events = (data.scorers || []).filter((s: { matchId: string }) => s.matchId === matchId);
+      setMatchEvents(events);
+    }).catch(() => {});
+  }, [matchId, localMatches]);
 
   if (!match) {
     return (
@@ -124,6 +139,35 @@ export default function MatchDetailPage() {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const handleAddEvent = async () => {
+    if (!eventTeam || !eventPlayer.trim()) return;
+    try {
+      const res = await fetch('/api/scorers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ matchId, teamId: eventTeam, playerName: eventPlayer.trim(), minute: eventMinute ? parseInt(eventMinute) : null, isPenalty: eventIsPenalty, isOwnGoal: eventIsOwnGoal }),
+      });
+      if (res.ok) {
+        setShowEventForm(false);
+        setEventPlayer('');
+        setEventMinute('');
+        setEventTeam('');
+        setEventIsPenalty(false);
+        setEventIsOwnGoal(false);
+        const data = await (await fetch('/api/scorers')).json();
+        const events = (data.scorers || []).filter((s: { matchId: string }) => s.matchId === matchId);
+        setMatchEvents(events);
+      }
+    } catch {}
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await fetch('/api/scorers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: eventId }) });
+      setMatchEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch {}
   };
 
   const sameDayMatches = allMatches.filter(m => m.date === match.date && m.id !== match.id);
@@ -256,6 +300,84 @@ export default function MatchDetailPage() {
             </div>
           </div>
         </div>
+
+        {isCompleted && matchEvents.length > 0 && (
+          <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Maç Olayları
+            </h3>
+            <div className="space-y-2">
+              {[...matchEvents].sort((a, b) => (a.minute || 90) - (b.minute || 90)).map((event, i) => {
+                const team = getTeam(event.teamId);
+                return (
+                  <div key={event.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                      {event.minute != null ? `${event.minute}'` : '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{event.playerName} {event.isOwnGoal && <span className="text-red-500 text-xs">(K.K.)</span>}</p>
+                      <div className="flex items-center gap-1.5">
+                        <img src={team.flag || getFlagUrl(event.teamId)} alt="" className="w-4 h-3 rounded object-cover" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{team.name}</span>
+                        {event.isPenalty && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">Penaltı</span>}
+                      </div>
+                    </div>
+                    {user && (
+                      <button onClick={() => handleDeleteEvent(event.id)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {isCompleted && user && (
+          <div className="mt-4">
+            {!showEventForm ? (
+              <button onClick={() => { setShowEventForm(true); setEventTeam(match.homeTeamId); }} className="btn-secondary w-full py-2.5 text-sm">
+                + Gol Ekle
+              </button>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+                <h4 className="font-bold text-gray-900 dark:text-white mb-4">Gol Ekle</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Takım</label>
+                    <select value={eventTeam} onChange={e => setEventTeam(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm">
+                      <option value="">Takım seçin</option>
+                      <option value={match.homeTeamId}>{homeTeam.name}</option>
+                      <option value={match.awayTeamId}>{awayTeam.name}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Oyuncu Adı</label>
+                    <input type="text" value={eventPlayer} onChange={e => setEventPlayer(e.target.value)} placeholder="Örn: Lionel Messi" className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dakika</label>
+                    <input type="number" value={eventMinute} onChange={e => setEventMinute(e.target.value)} placeholder="Örn: 45" min="1" max="120" className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white text-sm" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={eventIsPenalty} onChange={e => setEventIsPenalty(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Penaltı</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={eventIsOwnGoal} onChange={e => setEventIsOwnGoal(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Kendi kalesine</span>
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleAddEvent} className="btn-primary px-6 py-2 text-sm">Kaydet</button>
+                    <button onClick={() => setShowEventForm(false)} className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-6 py-2 rounded-xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500">İptal</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {sameDayMatches.length > 0 && (
           <div className="mt-8">
