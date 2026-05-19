@@ -19,7 +19,6 @@ const FEEDS = [
 
 let cachedNews: { timestamp: number; data: NewsItem[] } | null = null;
 const CACHE_TTL = 30 * 60 * 1000;
-const newsStore: NewsItem[] = [];
 
 function decodeHtmlEntities(text: string): string {
   return text
@@ -200,10 +199,7 @@ async function refreshNews(): Promise<NewsItem[]> {
     return dateB - dateA;
   });
 
-  const news = unique.slice(0, 20);
-
-  newsStore.length = 0;
-  newsStore.push(...news);
+const news = unique.slice(0, 20);
 
   return news;
 }
@@ -212,11 +208,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const articleId = searchParams.get('id');
 
-  if (cachedNews && Date.now() - cachedNews.timestamp < CACHE_TTL && !articleId) {
-    return NextResponse.json({ news: cachedNews.data });
-  }
-
   if (!articleId) {
+    if (cachedNews && Date.now() - cachedNews.timestamp < CACHE_TTL) {
+      return NextResponse.json({ news: cachedNews.data });
+    }
+
     try {
       const news = await refreshNews();
       cachedNews = { timestamp: Date.now(), data: news };
@@ -226,7 +222,15 @@ export async function GET(request: Request) {
     }
   }
 
-  const item = newsStore.find(n => n.id === articleId);
+  let currentNews = cachedNews?.data || [];
+  if (currentNews.length === 0) {
+    try {
+      currentNews = await refreshNews();
+      cachedNews = { timestamp: Date.now(), data: currentNews };
+    } catch {}
+  }
+
+  const item = currentNews.find(n => n.id === articleId);
   if (!item) {
     return NextResponse.json({ error: 'Haber bulunamadı' }, { status: 404 });
   }
@@ -234,7 +238,7 @@ export async function GET(request: Request) {
   let fullContent = item.content;
   if (!fullContent || fullContent.length < 200) {
     const fetched = await fetchArticleContent(item.link);
-    if (fetched && fetched.length > fullContent.length) {
+    if (fetched && fetched.length > (fullContent?.length || 0)) {
       fullContent = fetched;
     }
   }

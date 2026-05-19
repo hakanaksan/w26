@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Header from '@/components/Header';
 
 interface NewsDetail {
   id: string;
@@ -64,6 +65,7 @@ export default function NewsDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+        <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -83,6 +85,7 @@ export default function NewsDetailPage() {
   if (!article) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+        <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">📰</div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Haber bulunamadı</h2>
@@ -98,6 +101,7 @@ export default function NewsDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+      <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
