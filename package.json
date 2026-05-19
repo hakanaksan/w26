@@ -11,12 +11,16 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
+    "bcryptjs": "^3.0.3",
+    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.38.0",
+    "jose": "^6.2.3",
     "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

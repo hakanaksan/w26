@@ -1,49 +1,56 @@
 import { NextResponse } from 'next/server';
+import { client } from '@/lib/db-client';
+import { verifyToken } from '@/lib/auth';
 
-const notifications: Record<string, any[]> = {};
+async function getUser(request: Request) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  return verifyToken(authHeader.substring(7));
+}
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const matchId = searchParams.get('matchId');
+  const user = await getUser(request);
+  if (!user) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
-  if (matchId) {
-    return NextResponse.json(notifications[matchId] || []);
-  }
-
-  return NextResponse.json(notifications);
+  const result = await client.execute({ sql: 'SELECT * FROM user_notifications WHERE user_id = ? AND is_active = 1', args: [user.userId] });
+  return NextResponse.json({ notifications: result.rows });
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { matchId, type, minutesBefore } = body;
+  const user = await getUser(request);
+  if (!user) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
-  if (!notifications[matchId]) {
-    notifications[matchId] = [];
+  const { matchId, type, minutesBefore } = await request.json();
+
+  if (!matchId || !type || minutesBefore === undefined) {
+    return NextResponse.json({ error: 'Eksik bilgi' }, { status: 400 });
   }
 
-  const notification = {
-    id: `notif_${Date.now()}`,
-    matchId,
-    type,
-    minutesBefore,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  };
+  const id = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const createdAt = new Date().toISOString();
 
-  notifications[matchId].push(notification);
+  await client.execute({
+    sql: 'INSERT INTO user_notifications (id, user_id, match_id, type, minutes_before, is_active, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)',
+    args: [id, user.userId, matchId, type, minutesBefore, createdAt],
+  });
 
-  return NextResponse.json(notification);
+  return NextResponse.json({ id, matchId, type, minutesBefore });
 }
 
 export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const notificationId = searchParams.get('id');
+  const user = await getUser(request);
+  if (!user) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
-  for (const matchId in notifications) {
-    notifications[matchId] = notifications[matchId].filter(
-      (n: any) => n.id !== notificationId
-    );
+  const { notificationId } = await request.json();
+
+  if (!notificationId) {
+    return NextResponse.json({ error: 'notificationId gerekli' }, { status: 400 });
   }
+
+  await client.execute({
+    sql: 'DELETE FROM user_notifications WHERE id = ? AND user_id = ?',
+    args: [notificationId, user.userId],
+  });
 
   return NextResponse.json({ success: true });
 }

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'FIFA World Cup 2026 - Fixture & Results',
-  description: '2026 FIFA World Cup fixtures, results, and notifications',
+  title: 'FIFA Dünya Kupası 2026 - Fikstür ve Sonuçlar',
+  description: '2026 FIFA Dünya Kupası fikstürü, sonuçları, tahminleri ve bildirimleri',
 };
 
 export default function RootLayout({
@@ -15,9 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body className={`${inter.variable} font-sans min-h-screen bg-slate-50`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
