@@ -1,25 +1,28 @@
 import { NextResponse } from 'next/server';
 
-const FEEDS = [
-  { url: 'https://news.google.com/rss/search?q=FIFA+2026+World+Cup&hl=en-US&gl=US&ceid=US:en', lang: 'en' },
-  { url: 'https://news.google.com/rss/search?q=2026+Dünya+Kupası&hl=tr&gl=TR&ceid=TR:tr', lang: 'tr' },
-  { url: 'https://www.espn.com/espn/rss/soccer/news', lang: 'en' },
-];
-
 interface NewsItem {
+  id: string;
   title: string;
   link: string;
   pubDate: string;
   source: string;
   description: string;
   imageUrl: string | null;
+  content: string;
 }
+
+const FEEDS = [
+  'https://news.google.com/rss/search?q=2026+Dünya+Kupası+FIFA&hl=tr&gl=TR&ceid=TR:tr',
+  'https://news.google.com/rss/search?q=FIFA+World+Cup+2026&hl=en&gl=US&ceid=US:en',
+];
 
 let cachedNews: { timestamp: number; data: NewsItem[] } | null = null;
 const CACHE_TTL = 30 * 60 * 1000;
 
+const newsStore: NewsItem[] = [];
+
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
 }
 
 function extractImageUrl(desc: string): string | null {
@@ -27,10 +30,15 @@ function extractImageUrl(desc: string): string | null {
   return match ? match[1] : null;
 }
 
-async function fetchFeed(url: string, lang: string): Promise<NewsItem[]> {
+function generateId(title: string, link: string): string {
+  const raw = (title + link).substring(0, 100);
+  return Buffer.from(raw).toString('base64url').substring(0, 20);
+}
+
+async function fetchFeed(url: string): Promise<NewsItem[]> {
   try {
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; W26Bot/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
       next: { revalidate: 1800 },
     });
 
@@ -58,9 +66,19 @@ async function fetchFeed(url: string, lang: string): Promise<NewsItem[]> {
       const rawDesc = descMatch ? (descMatch[1] || descMatch[2] || '').trim() : '';
       const description = stripHtml(rawDesc).substring(0, 200);
       const imageUrl = extractImageUrl(rawDesc);
+      const content = stripHtml(rawDesc);
 
       if (title && link) {
-        items.push({ title, link, pubDate, source, description, imageUrl });
+        items.push({
+          id: generateId(title, link),
+          title,
+          link,
+          pubDate,
+          source,
+          description,
+          imageUrl,
+          content,
+        });
       }
     }
 
@@ -70,43 +88,107 @@ async function fetchFeed(url: string, lang: string): Promise<NewsItem[]> {
   }
 }
 
-export async function GET() {
-  if (cachedNews && Date.now() - cachedNews.timestamp < CACHE_TTL) {
+async function fetchArticleContent(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) return '';
+
+    const html = await response.text();
+
+    const ogDesc = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/i);
+    if (ogDesc && ogDesc[1]) return ogDesc[1];
+
+    const metaDesc = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i);
+    if (metaDesc && metaDesc[1]) return metaDesc[1];
+
+    const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+    if (articleMatch) {
+      const text = stripHtml(articleMatch[1]);
+      if (text.length > 200) return text.substring(0, 3000);
+    }
+
+    const bodyMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+    if (bodyMatch && bodyMatch.length > 2) {
+      const text = bodyMatch.slice(0, 20).map(p => stripHtml(p)).filter(t => t.length > 30).join(' ');
+      if (text.length > 200) return text.substring(0, 3000);
+    }
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+async function refreshNews(): Promise<NewsItem[]> {
+  const allItems: NewsItem[] = [];
+
+  for (const feed of FEEDS) {
+    const items = await fetchFeed(feed);
+    allItems.push(...items);
+  }
+
+  const seen = new Set<string>();
+  const unique: NewsItem[] = [];
+  for (const item of allItems) {
+    const key = item.title.toLowerCase().trim();
+    if (!seen.has(key) && key.length > 10) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+
+  unique.sort((a, b) => {
+    const dateA = new Date(a.pubDate).getTime();
+    const dateB = new Date(b.pubDate).getTime();
+    if (isNaN(dateA) && isNaN(dateB)) return 0;
+    if (isNaN(dateA)) return 1;
+    if (isNaN(dateB)) return -1;
+    return dateB - dateA;
+  });
+
+  const news = unique.slice(0, 20);
+
+  newsStore.length = 0;
+  newsStore.push(...news);
+
+  return news;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const articleId = searchParams.get('id');
+
+  if (cachedNews && Date.now() - cachedNews.timestamp < CACHE_TTL && !articleId) {
     return NextResponse.json({ news: cachedNews.data });
   }
 
-  try {
-    const allItems: NewsItem[] = [];
-
-    for (const feed of FEEDS) {
-      const items = await fetchFeed(feed.url, feed.lang);
-      allItems.push(...items);
+  if (!articleId) {
+    try {
+      const news = await refreshNews();
+      cachedNews = { timestamp: Date.now(), data: news };
+      return NextResponse.json({ news });
+    } catch {
+      return NextResponse.json({ news: cachedNews?.data || [] });
     }
-
-    const seen = new Set<string>();
-    const unique: NewsItem[] = [];
-    for (const item of allItems) {
-      const key = item.title.toLowerCase().trim();
-      if (!seen.has(key) && key.length > 10) {
-        seen.add(key);
-        unique.push(item);
-      }
-    }
-
-    unique.sort((a, b) => {
-      const dateA = new Date(a.pubDate).getTime();
-      const dateB = new Date(b.pubDate).getTime();
-      if (isNaN(dateA) && isNaN(dateB)) return 0;
-      if (isNaN(dateA)) return 1;
-      if (isNaN(dateB)) return -1;
-      return dateB - dateA;
-    });
-
-    const news = unique.slice(0, 12);
-
-    cachedNews = { timestamp: Date.now(), data: news };
-    return NextResponse.json({ news });
-  } catch {
-    return NextResponse.json({ news: [] });
   }
+
+  const item = newsStore.find(n => n.id === articleId);
+  if (!item) {
+    return NextResponse.json({ error: 'Haber bulunamadı' }, { status: 404 });
+  }
+
+  let fullContent = item.content;
+  if (!fullContent || fullContent.length < 200) {
+    const fetched = await fetchArticleContent(item.link);
+    if (fetched) fullContent = fetched;
+  }
+
+  return NextResponse.json({
+    ...item,
+    content: fullContent || item.description,
+  });
 }

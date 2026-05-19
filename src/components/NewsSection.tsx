@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 
 interface NewsItem {
+  id: string;
   title: string;
   link: string;
   pubDate: string;
@@ -86,15 +87,14 @@ export default function NewsSection() {
             <p className="text-sm text-gray-500 dark:text-gray-400">2026 Dünya Kupası</p>
           </div>
         </div>
+        <a href="/news/all" className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline hidden sm:block">Tümünü Gör →</a>
       </div>
 
-      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-        {news.map((item, index) => (
+      <div className="space-y-1 max-h-[420px] overflow-y-auto pr-1 scrollbar-hide">
+        {news.slice(0, 8).map((item) => (
           <a
-            key={index}
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
+            key={item.id}
+            href={`/news/${item.id}`}
             className="flex gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
           >
             {item.imageUrl ? (
@@ -115,13 +115,12 @@ export default function NewsSection() {
                   </>
                 )}
               </div>
-              {item.description && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-1">{item.description}</p>
-              )}
             </div>
           </a>
         ))}
       </div>
+
+      <a href="/news/all" className="block sm:hidden mt-3 text-center text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">Tüm Haberleri Gör →</a>
     </div>
   );
 }
