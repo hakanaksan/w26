@@ -257,22 +257,26 @@ export default function Home() {
                     {liveLoading && <span className="text-xs text-blue-200 animate-pulse">Güncelleniyor...</span>}
                   </div>
                 </div>
-                <div className="flex gap-4 flex-wrap">
-                  <div className="text-center bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
+                <div className="flex gap-3 flex-wrap">
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
                     <p className="text-2xl font-black">{stats.totalMatches}</p>
-                    <p className="text-blue-200 text-xs">Toplam Maç</p>
+                    <p className="text-blue-200 text-[11px]">Toplam Maç</p>
                   </div>
-                  <div className="text-center bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
                     <p className="text-2xl font-black">{stats.completedMatches}</p>
-                    <p className="text-blue-200 text-xs">Biten</p>
+                    <p className="text-blue-200 text-[11px]">Biten</p>
                   </div>
-                  <div className="text-center bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
                     <p className="text-2xl font-black">{stats.totalGoals}</p>
-                    <p className="text-blue-200 text-xs">Gol</p>
+                    <p className="text-blue-200 text-[11px]">Gol</p>
                   </div>
-                  <div className="text-center bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
+                    <p className="text-2xl font-black">{stats.completedMatches > 0 ? (stats.totalGoals / stats.completedMatches).toFixed(1) : '-'}</p>
+                    <p className="text-blue-200 text-[11px]">Gol/Maç</p>
+                  </div>
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
                     <p className="text-2xl font-black">{stats.predictionsCount}</p>
-                    <p className="text-blue-200 text-xs">Tahmin</p>
+                    <p className="text-blue-200 text-[11px]">Tahmin</p>
                   </div>
                 </div>
               </div>
