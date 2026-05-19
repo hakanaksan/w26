@@ -12,6 +12,7 @@ import NewsSection from '@/components/NewsSection';
 import ScorerEntryForm from '@/components/ScorerEntryForm';
 import SharePredictionCard from '@/components/SharePredictionCard';
 import BracketView from '@/components/BracketView';
+import CompareModal from '@/components/CompareModal';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
@@ -28,6 +29,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; close: number; missed: number; points: number }[]>([]);
   const [scorerLeaderboard, setScorerLeaderboard] = useState<{ teamId: string; playerName: string; goals: number; penalties: number; ownGoals: number }[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
 
@@ -507,12 +509,18 @@ export default function Home() {
 
         {activeTab === 'groups' && (
           <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-2xl">📊</div>
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Grup Puan Durumu</h2>
-                <p className="text-gray-500 dark:text-gray-400">Takımların durumunu takip edin</p>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-2xl">📊</div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white">Grup Puan Durumu</h2>
+                  <p className="text-gray-500 dark:text-gray-400">Takımların durumunu takip edin</p>
+                </div>
               </div>
+              <button onClick={() => setShowCompare(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                Karşılaştır
+              </button>
             </div>
             <GroupStandings selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} matches={matches} />
           </div>
@@ -781,6 +789,8 @@ export default function Home() {
           onSave={handleSaveNotification}
         />
       )}
+
+      {showCompare && <CompareModal onClose={() => setShowCompare(false)} />}
     </div>
   );
 }
