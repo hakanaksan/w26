@@ -46,6 +46,21 @@ export default function NewsDetailPage() {
     }
   };
 
+  const renderContent = (content: string) => {
+    if (!content || content.length < 20) return null;
+
+    const paragraphs = content
+      .split(/\n\n+/)
+      .map(p => p.trim())
+      .filter(p => p.length > 20);
+
+    return paragraphs.map((paragraph, i) => (
+      <p key={i} className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-base">
+        {paragraph}
+      </p>
+    ));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
@@ -77,6 +92,9 @@ export default function NewsDetailPage() {
       </div>
     );
   }
+
+  const hasContent = article.content && article.content.length > 100;
+  const displayContent = hasContent ? article.content : article.description;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
@@ -112,44 +130,30 @@ export default function NewsDetailPage() {
               {article.title}
             </h1>
 
-            {article.content && article.content.length > 100 ? (
-              <div className="prose prose-gray dark:prose-invert max-w-none">
-                {article.content.split(/\.\s+/).reduce((paragraphs: string[][], sentence: string, index: number) => {
-                  const paraIndex = Math.floor(index / 3);
-                  if (!paragraphs[paraIndex]) paragraphs[paraIndex] = [];
-                  paragraphs[paraIndex].push(sentence);
-                  return paragraphs;
-                }, []).map((sentences, index) => (
-                  <p key={index} className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                    {sentences.join('. ')}{sentences.length > 0 ? '.' : ''}
-                  </p>
-                ))}
+            {displayContent && displayContent.length > 20 ? (
+              <div className="mb-6">
+                {renderContent(displayContent)}
               </div>
-            ) : article.description ? (
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">{article.description}</p>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 mb-6">Haber detayı yüklenemedi.</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 italic">Haber özeti yüklenemedi. Kaynak sitesinden okuyabilirsiniz.</p>
             )}
 
-            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
               <a
                 href={article.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary inline-flex items-center gap-2 px-6 py-3"
+                className="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3"
               >
-                Kaynak Haberi Oku
+                Kaynak Sitede Oku
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6H10" /></svg>
               </a>
+              <button onClick={() => router.push('/')} className="btn-secondary px-6 py-3">
+                Ana Sayfaya Dön
+              </button>
             </div>
           </div>
         </article>
-
-        <div className="mt-8 text-center">
-          <button onClick={() => router.push('/')} className="btn-secondary px-8 py-3">
-            ← Ana Sayfaya Dön
-          </button>
-        </div>
       </div>
     </div>
   );
