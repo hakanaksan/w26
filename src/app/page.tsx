@@ -31,6 +31,8 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; close: number; missed: number; points: number }[]>([]);
   const [scorerLeaderboard, setScorerLeaderboard] = useState<{ teamId: string; playerName: string; goals: number; penalties: number; ownGoals: number }[]>([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; close: number; missed: number; points: number } } | null>(null);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
 
@@ -544,17 +546,15 @@ export default function Home() {
                       <th className="text-left py-4 px-4">#</th>
                       <th className="text-left py-4 px-4">Kullanıcı</th>
                       <th className="text-center py-4 px-2">Tahmin</th>
-                      <th className="text-center py-4 px-2">Değer.</th>
                       <th className="text-center py-4 px-2">Tam</th>
                       <th className="text-center py-4 px-2">Yakın</th>
-                      <th className="text-center py-4 px-2">Isabet Yok</th>
                       <th className="text-center py-4 px-4">Puan</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leaderboard.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center py-12 text-gray-400 dark:text-gray-500">
+                        <td colSpan={6} className="text-center py-12 text-gray-400 dark:text-gray-500">
                           <p className="text-3xl mb-2">🏆</p>
                           <p className="text-sm">Henüz sıralama yok</p>
                           <p className="text-xs mt-1">Tahmin yapıldığında burada görünür</p>
@@ -562,7 +562,7 @@ export default function Home() {
                       </tr>
                     ) : (
                       leaderboard.map((entry, index) => (
-                        <tr key={entry.userId} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${index < 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
+                        <tr key={entry.userId} onClick={() => { setSelectedUserId(entry.userId); fetch(`/api/leaderboard?userId=${entry.userId}`).then(r => r.json()).then(d => setUserDetail(d)).catch(() => {}); }} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer ${index < 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
                           <td className="py-4 px-4">
                             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${index === 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : index === 1 ? 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' : index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                               {index + 1}
@@ -570,10 +570,8 @@ export default function Home() {
                           </td>
                           <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{entry.name}</td>
                           <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{entry.totalPredictions}</td>
-                          <td className="text-center py-4 px-2 text-gray-500 dark:text-gray-400">{entry.completedPredictions}</td>
                           <td className="text-center py-4 px-2 text-emerald-600 dark:text-emerald-400 font-medium">{entry.exact}</td>
                           <td className="text-center py-4 px-2 text-amber-600 dark:text-amber-400">{entry.close}</td>
-                          <td className="text-center py-4 px-2 text-red-500 dark:text-red-400">{entry.missed}</td>
                           <td className="text-center py-4 px-4"><span className="text-lg font-black text-blue-600 dark:text-blue-400">{entry.points}</span></td>
                         </tr>
                       ))
@@ -587,6 +585,60 @@ export default function Home() {
               <p>• Tam isabet (gerçek skorun aynısı): <strong>3 puan</strong></p>
               <p>• Yakın tahmin (gol farkı veya bir skor doğru): <strong>1 puan</strong></p>
               <p>• Isabet yok: <strong>0 puan</strong></p>
+            </div>
+          </div>
+        )}
+
+        {selectedUserId && userDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setSelectedUserId(null); setUserDetail(null); }}>
+            <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 pb-4 border-b border-gray-100 dark:border-gray-700 rounded-t-3xl z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                      {userDetail.user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{userDetail.user.name}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                        <span>{userDetail.stats.total} tahmin</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{userDetail.stats.exact} tam</span>
+                        <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.close} yakın</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">{userDetail.stats.points} puan</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => { setSelectedUserId(null); setUserDetail(null); }} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 pt-4 space-y-2">
+                {Object.entries(userDetail.predictions)
+                  .sort((a, b) => a[0].localeCompare(b[0]))
+                  .slice(0, 30)
+                  .map(([matchId, pred]) => {
+                    const match = matches.find(m => m.id === matchId);
+                    if (!match) return null;
+                    const homeTeam = getTeam(match.homeTeamId);
+                    const awayTeam = getTeam(match.awayTeamId);
+                    return (
+                      <div key={matchId} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <img src={homeTeam.flag || getFlagUrl(match.homeTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0" />
+                          <span className="text-xs text-gray-600 dark:text-gray-300 font-medium truncate">{homeTeam.name}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 mx-0.5">vs</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300 font-medium truncate">{awayTeam.name}</span>
+                          <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0" />
+                        </div>
+                        <span className="font-bold text-blue-600 dark:text-blue-400 text-sm tabular-nums ml-2">{pred.homeScore} - {pred.awayScore}</span>
+                      </div>
+                    );
+                  })}
+                {Object.keys(userDetail.predictions).length > 30 && (
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">+{Object.keys(userDetail.predictions).length - 30} tahmin daha</p>
+                )}
+              </div>
             </div>
           </div>
         )}
