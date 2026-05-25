@@ -12,6 +12,7 @@ import NewsSection from '@/components/NewsSection';
 import ScorerEntryForm from '@/components/ScorerEntryForm';
 import SharePredictionCard from '@/components/SharePredictionCard';
 import BracketView from '@/components/BracketView';
+import BracketPredictor from '@/components/BracketPredictor';
 import CompareModal from '@/components/CompareModal';
 import LeaguesView from '@/components/LeaguesView';
 import { matches as allMatches } from '@/data/fixtures';
@@ -21,6 +22,7 @@ import { useLiveScores } from '@/hooks/useLiveScores';
 export default function Home() {
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('fixtures');
+  const [bracketView, setBracketView] = useState<'real' | 'predict'>('real');
   const [selectedDate, setSelectedDate] = useState('2026-06-11');
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [localMatches, setLocalMatches] = useState(allMatches);
@@ -376,7 +378,19 @@ export default function Home() {
           </div>
         )}
 
-        {activeTab === 'bracket' && <BracketView />}
+        {activeTab === 'bracket' && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <button onClick={() => setBracketView('real')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${bracketView === 'real' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                Turnuva Ağacı
+              </button>
+              <button onClick={() => setBracketView('predict')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${bracketView === 'predict' ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                🎯 Tahmin Turnuvası
+              </button>
+            </div>
+            {bracketView === 'real' ? <BracketView /> : <BracketPredictor />}
+          </div>
+        )}
 
         {activeTab === 'results' && (
           <div className="space-y-6">
