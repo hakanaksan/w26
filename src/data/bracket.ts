@@ -15,7 +15,10 @@ export interface GroupStanding {
   pts: number;
 }
 
-export function calculateGroupStandings(matchData: Match[]): Record<string, GroupStanding[]> {
+export function calculateGroupStandings(
+  matchData: Match[],
+  predictions: Record<string, { homeScore: number; awayScore: number }> = {}
+): Record<string, GroupStanding[]> {
   const groups: Record<string, GroupStanding[]> = {};
 
   for (const code of Object.keys(allTeams)) {
@@ -30,8 +33,20 @@ export function calculateGroupStandings(matchData: Match[]): Record<string, Grou
   }
 
   for (const m of matchData) {
-    if (!m.group || !m.isCompleted) continue;
-    if (m.homeScore === undefined || m.awayScore === undefined) continue;
+    if (!m.group) continue;
+
+    let homeScore: number | undefined;
+    let awayScore: number | undefined;
+
+    if (m.isCompleted && m.homeScore !== undefined && m.awayScore !== undefined) {
+      homeScore = m.homeScore;
+      awayScore = m.awayScore;
+    } else if (predictions[m.id]) {
+      homeScore = predictions[m.id].homeScore;
+      awayScore = predictions[m.id].awayScore;
+    } else {
+      continue;
+    }
 
     const homeGroup = groups[m.group];
     if (!homeGroup) continue;
@@ -41,12 +56,12 @@ export function calculateGroupStandings(matchData: Match[]): Record<string, Grou
     if (!home || !away) continue;
 
     home.played++; away.played++;
-    home.gf += m.homeScore; home.ga += m.awayScore;
-    away.gf += m.awayScore; away.ga += m.homeScore;
+    home.gf += homeScore; home.ga += awayScore;
+    away.gf += awayScore; away.ga += homeScore;
 
-    if (m.homeScore > m.awayScore) {
+    if (homeScore > awayScore) {
       home.won++; home.pts += 3; away.lost++;
-    } else if (m.homeScore < m.awayScore) {
+    } else if (homeScore < awayScore) {
       away.won++; away.pts += 3; home.lost++;
     } else {
       home.drawn++; away.drawn++; home.pts += 1; away.pts += 1;
@@ -129,7 +144,7 @@ export function resolveBracket(
   matchData: Match[],
   predictions: Record<string, { homeScore: number; awayScore: number }> = {}
 ): BracketSlot[] {
-  const standings = calculateGroupStandings(matchData);
+  const standings = calculateGroupStandings(matchData, predictions);
   const slots: BracketSlot[] = [];
   const winners: Record<string, string> = {};
 
