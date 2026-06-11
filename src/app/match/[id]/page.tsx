@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Header from '@/components/Header';
@@ -28,8 +28,9 @@ export default function MatchDetailPage() {
   const [eventTeam, setEventTeam] = useState('');
   const [eventIsPenalty, setEventIsPenalty] = useState(false);
   const [eventIsOwnGoal, setEventIsOwnGoal] = useState(false);
+  const savedGoalKeys = useRef(new Set<string>());
 
-  const { mergedMatches: matches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
+  const { mergedMatches: matches, liveMatches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
   const liveMatch = matches.find(m => m.id === matchId);
 
   useEffect(() => {
@@ -66,6 +67,57 @@ export default function MatchDetailPage() {
       .then(data => setIsFavorite((data.favorites || []).includes(matchId)))
       .catch(() => {});
   }, [token, matchId]);
+
+  useEffect(() => {
+    const liveApiMatch = liveMatches.find((m: any) => {
+      const localM = allMatches.find(l => l.id === matchId);
+      if (!localM) return false;
+      return m.date === localM.date && m.homeCode === localM.homeTeamId && m.awayCode === localM.awayTeamId;
+    });
+    if (!liveApiMatch || !liveApiMatch.goals || liveApiMatch.goals.length === 0) return;
+
+    liveApiMatch.goals.forEach((goal: any) => {
+      const goalKey = `live_${liveApiMatch.id}_${goal.playerName}_${goal.minute}`;
+      if (savedGoalKeys.current.has(goalKey)) return;
+      savedGoalKeys.current.add(goalKey);
+
+      fetch('/api/scorers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId,
+          teamId: goal.teamCode,
+          playerName: goal.playerName,
+          minute: goal.minute,
+          isPenalty: goal.isPenalty,
+          isOwnGoal: goal.isOwnGoal,
+        }),
+      }).then(res => {
+        if (res.ok) {
+          setMatchEvents(prev => {
+            if (prev.some(e => e.id === goalKey)) return prev;
+            return [...prev, {
+              id: goalKey,
+              teamId: goal.teamCode,
+              playerName: goal.playerName,
+              minute: goal.minute,
+              isPenalty: goal.isPenalty,
+              isOwnGoal: goal.isOwnGoal,
+            }];
+          });
+        }
+      }).catch(() => {});
+    });
+  }, [liveMatches, matchId]);
+
+  useEffect(() => {
+    fetch('/api/scorers').then(res => res.ok ? res.json() : { scorers: [] })
+      .then(data => {
+        const events = (data.scorers || []).filter((s: any) => s.matchId === matchId);
+        setMatchEvents(events);
+      })
+      .catch(() => {});
+  }, [matchId]);
 
   useEffect(() => {
     if (!isCompleted) return;

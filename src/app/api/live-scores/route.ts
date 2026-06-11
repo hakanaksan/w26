@@ -26,6 +26,15 @@ const AF_TEAM_MAP: Record<string, string> = {
   "Cote d'Ivoire": 'CIV',
 };
 
+interface GoalEvent {
+  minute: number | null;
+  playerName: string;
+  teamName: string;
+  teamCode: string;
+  isPenalty: boolean;
+  isOwnGoal: boolean;
+}
+
 interface MatchResult {
   id: string;
   source: string;
@@ -42,6 +51,7 @@ interface MatchResult {
   time: string;
   isCompleted: boolean;
   isLive: boolean;
+  goals: GoalEvent[];
 }
 
 let cachedData: { timestamp: number; data: unknown; key: string } | null = null;
@@ -77,6 +87,14 @@ async function fetchFootballDataOrg(date: string): Promise<{ matches: MatchResul
         const homeCode = FD_TEAM_MAP[m.homeTeam?.name] || m.homeTeam?.tla || '';
         const awayCode = FD_TEAM_MAP[m.awayTeam?.name] || m.awayTeam?.tla || '';
         const status = parseStatus(m.status, 'football-data');
+        const goals: GoalEvent[] = (m.goals || []).map((g: any) => ({
+          minute: g.minute ?? null,
+          playerName: g.scorer?.name || '',
+          teamName: g.team?.name || '',
+          teamCode: FD_TEAM_MAP[g.team?.name] || g.team?.tla || '',
+          isPenalty: g.type === 'PENALTY',
+          isOwnGoal: g.type === 'OWN_GOAL',
+        }));
         return {
           id: `fd_${m.id}`,
           source: 'football-data',
@@ -93,6 +111,7 @@ async function fetchFootballDataOrg(date: string): Promise<{ matches: MatchResul
           time: m.utcDate ? new Date(m.utcDate).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }) : '',
           isCompleted: status.isCompleted,
           isLive: status.isLive,
+          goals,
         };
       });
 
@@ -120,6 +139,16 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
       const homeCode = AF_TEAM_MAP[f.teams?.home?.name] || '';
       const awayCode = AF_TEAM_MAP[f.teams?.away?.name] || '';
       const status = parseStatus(f.fixture?.status?.short, 'api-football');
+      const goals: GoalEvent[] = (f.events || [])
+        .filter((e: any) => e.type === 'Goal')
+        .map((e: any) => ({
+          minute: e.time?.elapsed ?? null,
+          playerName: e.player?.name || '',
+          teamName: e.team?.name || '',
+          teamCode: AF_TEAM_MAP[e.team?.name] || '',
+          isPenalty: e.detail === 'Penalty',
+          isOwnGoal: e.detail === 'Own Goal',
+        }));
       return {
         id: `af_${f.fixture?.id}`,
         source: 'api-football',
@@ -136,6 +165,7 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
         time: f.fixture?.date ? new Date(f.fixture.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }) : '',
         isCompleted: status.isCompleted,
         isLive: status.isLive,
+        goals,
       };
     });
 

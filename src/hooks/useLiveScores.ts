@@ -3,6 +3,15 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Match } from '@/data/fixtures';
 
+interface GoalEvent {
+  minute: number | null;
+  playerName: string;
+  teamName: string;
+  teamCode: string;
+  isPenalty: boolean;
+  isOwnGoal: boolean;
+}
+
 interface LiveScoreMatch {
   id: string;
   source: string;
@@ -19,6 +28,7 @@ interface LiveScoreMatch {
   time: string;
   isLive: boolean;
   isCompleted: boolean;
+  goals: GoalEvent[];
 }
 
 interface LiveScoresResult {
