@@ -221,6 +221,38 @@ export default function MatchDetailPage() {
     } catch {}
   };
 
+  const [scoreHome, setScoreHome] = useState('');
+  const [scoreAway, setScoreAway] = useState('');
+  const [isEditingScore, setIsEditingScore] = useState(false);
+
+  const handleSaveScore = async () => {
+    const h = parseInt(scoreHome);
+    const a = parseInt(scoreAway);
+    if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: h, awayScore: a, isCompleted: true } : m));
+    setIsEditingScore(false);
+    setScoreHome('');
+    setScoreAway('');
+    try {
+      await fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId, homeScore: h, awayScore: a }),
+      });
+    } catch {}
+  };
+
+  const handleClearScore = async () => {
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: undefined, awayScore: undefined, isCompleted: false } : m));
+    try {
+      await fetch('/api/scores', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId }),
+      });
+    } catch {}
+  };
+
   const sameDayMatches = allMatches.filter(m => m.date === match.date && m.id !== match.id);
 
   return (
@@ -270,10 +302,47 @@ export default function MatchDetailPage() {
             </div>
 
             <div className="text-center px-4">
-              {isCompleted ? (
+              {isCompleted || currentMatch.homeScore !== undefined ? (
                 <div>
                   <p className="text-5xl font-black text-gray-900 dark:text-white">{currentMatch.homeScore} - {currentMatch.awayScore}</p>
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">Maç Bitti</p>
+                  {isCompleted ? (
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">Maç Bitti</p>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      <p className="text-sm text-red-600 dark:text-red-400 font-bold">CANLI</p>
+                    </div>
+                  )}
+                  {user && (
+                    <div className="mt-2 flex items-center justify-center gap-2">
+                      <button onClick={() => { setScoreHome(String(currentMatch.homeScore ?? '')); setScoreAway(String(currentMatch.awayScore ?? '')); setIsEditingScore(true); }} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                        Skoru Düzenle
+                      </button>
+                      <button onClick={handleClearScore} className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20">
+                        Skoru Sil
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : isEditingScore ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white w-12 text-right">{homeTeam.name.substring(0, 3)}</span>
+                    <input type="number" min="0" max="99" value={scoreHome} onChange={e => setScoreHome(e.target.value)} className="w-14 text-center text-xl font-bold bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="0" />
+                    <span className="text-xl font-bold text-gray-400">-</span>
+                    <input type="number" min="0" max="99" value={scoreAway} onChange={e => setScoreAway(e.target.value)} className="w-14 text-center text-xl font-bold bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="0" />
+                    <span className="text-sm font-bold text-gray-900 dark:text-white w-12">{awayTeam.name.substring(0, 3)}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <button onClick={handleSaveScore} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">Kaydet</button>
+                    <button onClick={() => { setIsEditingScore(false); setScoreHome(''); setScoreAway(''); }} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">İptal</button>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      <input type="checkbox" className="rounded" defaultChecked />
+                      Maç bitti olarak işaretle
+                    </label>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -282,6 +351,11 @@ export default function MatchDetailPage() {
                     Başlangıç
                     <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium ml-1">TR</span>
                   </p>
+                  {user && (
+                    <button onClick={() => setIsEditingScore(true)} className="mt-3 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-blue-700 transition-all shadow-sm">
+                      Skor Gir
+                    </button>
+                  )}
                 </div>
               )}
             </div>
