@@ -29,7 +29,7 @@ export default function MatchDetailPage() {
   const [eventIsPenalty, setEventIsPenalty] = useState(false);
   const [eventIsOwnGoal, setEventIsOwnGoal] = useState(false);
 
-  const { mergedMatches: matches } = useLiveScores(localMatches);
+  const { mergedMatches: matches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
   const liveMatch = matches.find(m => m.id === matchId);
 
   useEffect(() => {
@@ -181,6 +181,23 @@ export default function MatchDetailPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           Geri
         </button>
+
+        {isApiConfigured && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={refreshLiveScores}
+              disabled={liveLoading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-medium hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30"
+            >
+              {liveLoading ? (
+                <span className="animate-spin w-3 h-3 border-2 border-white/30 border-t-white rounded-full" />
+              ) : (
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              )}
+              Skorları Güncelle
+            </button>
+          </div>
+        )}
 
         <div className="match-card">
           <div className="flex items-center justify-between mb-4">

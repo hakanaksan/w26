@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Match } from '@/data/fixtures';
 
 interface LiveScoreMatch {
@@ -53,6 +53,8 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isApiConfigured, setIsApiConfigured] = useState(true);
+  const matchesRef = useRef(matches);
+  matchesRef.current = matches;
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -73,6 +75,19 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
         setIsApiConfigured(true);
         setLiveMatches(data.matches || []);
         setLastUpdated(data.fetchedAt);
+
+        const apiMatches: LiveScoreMatch[] = data.matches || [];
+        const currentMatches = matchesRef.current;
+        for (const local of currentMatches) {
+          const apiResult = matchApiToLocal(local, apiMatches);
+          if (apiResult && (apiResult.isCompleted || apiResult.isLive || apiResult.homeScore !== null)) {
+            fetch('/api/scores', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ matchId: local.id, homeScore: apiResult.homeScore ?? 0, awayScore: apiResult.awayScore ?? 0 }),
+            }).catch(() => {});
+          }
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Canlı skorlar alınamadı');
