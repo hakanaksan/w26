@@ -18,7 +18,8 @@ interface LeagueMember {
   joinedAt: string;
   points?: number;
   exact?: number;
-  close?: number;
+  outcome?: number;
+  goalCount?: number;
   totalPredictions?: number;
 }
 
@@ -99,10 +100,10 @@ export default function LeaguesView() {
             const predData = predRes.ok ? await predRes.json() : { predictions: {} };
             const predictions = predData.predictions || {};
             const totalPredictions = Object.keys(predictions).length;
-            let exact = 0, close = 0;
-            return { ...m, points: exact * 3 + close, exact, close, totalPredictions };
+            let exact = 0, outcome = 0, goalCount = 0;
+            return { ...m, points: exact * 3 + outcome * 2 + goalCount, exact, outcome, goalCount, totalPredictions };
           } catch {
-            return { ...m, points: 0, exact: 0, close: 0, totalPredictions: 0 };
+            return { ...m, points: 0, exact: 0, outcome: 0, goalCount: 0, totalPredictions: 0 };
           }
         }));
         setMembers(membersWithData.sort((a, b) => (b.points || 0) - (a.points || 0)));

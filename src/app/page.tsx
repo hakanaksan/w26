@@ -31,11 +31,11 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notificationModal, setNotificationModal] = useState<{ matchId: string; matchName: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; close: number; missed: number; points: number }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ userId: string; name: string; totalPredictions: number; completedPredictions: number; exact: number; outcome: number; goalCount: number; missed: number; points: number }[]>([]);
   const [scorerLeaderboard, setScorerLeaderboard] = useState<{ teamId: string; playerName: string; goals: number; penalties: number; ownGoals: number }[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; close: number; missed: number; points: number } } | null>(null);
+  const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; outcome: number; goalCount: number; missed: number; points: number } } | null>(null);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
 
@@ -207,15 +207,20 @@ export default function Home() {
 
   const getPredictionStats = () => {
     const completedWithPredictions = matches.filter(m => m.isCompleted && predictions[m.id]);
-    if (completedWithPredictions.length === 0) return { total: 0, exact: 0, close: 0, missed: 0 };
-    let exact = 0, close = 0, missed = 0;
+    if (completedWithPredictions.length === 0) return { total: 0, exact: 0, outcome: 0, goalCount: 0, missed: 0 };
+    let exact = 0, outcome = 0, goalCount = 0, missed = 0;
     completedWithPredictions.forEach(m => {
       const pred = predictions[m.id];
       if (pred.homeScore === m.homeScore && pred.awayScore === m.awayScore) { exact++; }
-      else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore || (pred.homeScore - pred.awayScore === m.homeScore! - m.awayScore!)) { close++; }
-      else { missed++; }
+      else {
+        const predOutcome = pred.homeScore > pred.awayScore ? 'home' : pred.homeScore < pred.awayScore ? 'away' : 'draw';
+        const actualOutcome = m.homeScore! > m.awayScore! ? 'home' : m.homeScore! < m.awayScore! ? 'away' : 'draw';
+        if (predOutcome === actualOutcome) { outcome++; }
+        else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore) { goalCount++; }
+        else { missed++; }
+      }
     });
-    return { total: completedWithPredictions.length, exact, close, missed };
+    return { total: completedWithPredictions.length, exact, outcome, goalCount, missed };
   };
 
   const stats = getMatchStats();
@@ -569,14 +574,15 @@ export default function Home() {
                       <th className="text-left py-4 px-4">Kullanıcı</th>
                       <th className="text-center py-4 px-2">Tahmin</th>
                       <th className="text-center py-4 px-2">Tam</th>
-                      <th className="text-center py-4 px-2">Yakın</th>
+                      <th className="text-center py-4 px-2">Sonuç</th>
+                      <th className="text-center py-4 px-2">Gol</th>
                       <th className="text-center py-4 px-4">Puan</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leaderboard.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center py-12 text-gray-400 dark:text-gray-500">
+                        <td colSpan={7} className="text-center py-12 text-gray-400 dark:text-gray-500">
                           <p className="text-3xl mb-2">🏆</p>
                           <p className="text-sm">Henüz sıralama yok</p>
                           <p className="text-xs mt-1">Tahmin yapıldığında burada görünür</p>
@@ -593,7 +599,8 @@ export default function Home() {
                           <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{entry.name}</td>
                           <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{entry.totalPredictions}</td>
                           <td className="text-center py-4 px-2 text-emerald-600 dark:text-emerald-400 font-medium">{entry.exact}</td>
-                          <td className="text-center py-4 px-2 text-amber-600 dark:text-amber-400">{entry.close}</td>
+                          <td className="text-center py-4 px-2 text-blue-600 dark:text-blue-400">{entry.outcome}</td>
+                          <td className="text-center py-4 px-2 text-amber-600 dark:text-amber-400">{entry.goalCount}</td>
                           <td className="text-center py-4 px-4"><span className="text-lg font-black text-blue-600 dark:text-blue-400">{entry.points}</span></td>
                         </tr>
                       ))
@@ -605,7 +612,8 @@ export default function Home() {
             <div className="text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
               <p className="font-medium mb-1">Puanlama:</p>
               <p>• Tam isabet (gerçek skorun aynısı): <strong>3 puan</strong></p>
-              <p>• Yakın tahmin (gol farkı veya bir skor doğru): <strong>1 puan</strong></p>
+              <p>• Sonuç doğru (kazanan/beraberlik doğru, skor farklı): <strong>2 puan</strong></p>
+              <p>• Bir takımın gol sayısı doğru (tam skor değil): <strong>1 puan</strong></p>
               <p>• Isabet yok: <strong>0 puan</strong></p>
             </div>
           </div>
@@ -625,7 +633,8 @@ export default function Home() {
                       <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                         <span>{userDetail.stats.total} tahmin</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">{userDetail.stats.exact} tam</span>
-                        <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.close} yakın</span>
+                        <span className="text-blue-600 dark:text-blue-400">{userDetail.stats.outcome} sonuç</span>
+                        <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.goalCount} gol</span>
                         <span className="font-bold text-blue-600 dark:text-blue-400">{userDetail.stats.points} puan</span>
                       </div>
                     </div>
@@ -681,8 +690,9 @@ export default function Home() {
                   predictions={predictions}
                   matches={matches}
                   exact={predStats.exact}
-                  close={predStats.close}
-                  points={predStats.exact * 3 + predStats.close}
+                  outcome={predStats.outcome}
+                  goalCount={predStats.goalCount}
+                  points={predStats.exact * 3 + predStats.outcome * 2 + predStats.goalCount}
                 />
               )}
             </div>
@@ -699,18 +709,22 @@ export default function Home() {
                 {Object.keys(predictions).length > 0 && (
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tahmin İstatistikleri</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
                         <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.predictionsCount}</p>
                         <p className="text-sm text-blue-700 dark:text-blue-300">Toplam Tahmin</p>
                       </div>
                       <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center">
                         <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{predStats.exact}</p>
-                        <p className="text-sm text-emerald-700 dark:text-emerald-300">Tam isabet</p>
+                        <p className="text-sm text-emerald-700 dark:text-emerald-300">Tam İsabet (3p)</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{predStats.outcome}</p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">Sonuç Doğru (2p)</p>
                       </div>
                       <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center">
-                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{predStats.close}</p>
-                        <p className="text-sm text-amber-700 dark:text-amber-300">Yakın Tahmin</p>
+                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{predStats.goalCount}</p>
+                        <p className="text-sm text-amber-700 dark:text-amber-300">Gol Doğru (1p)</p>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 text-center">
                         <p className="text-2xl font-black text-red-600 dark:text-red-400">{predStats.missed}</p>

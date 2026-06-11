@@ -7,11 +7,12 @@ interface SharePredictionCardProps {
   predictions: Record<string, { homeScore: number; awayScore: number }>;
   matches: { id: string; homeTeamId: string; awayTeamId: string; date: string; stage: string; group?: string }[];
   exact: number;
-  close: number;
+  outcome: number;
+  goalCount: number;
   points: number;
 }
 
-export default function SharePredictionCard({ userName, predictions, matches, exact, close, points }: SharePredictionCardProps) {
+export default function SharePredictionCard({ userName, predictions, matches, exact, outcome, goalCount, points }: SharePredictionCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleShare = useCallback(() => {
@@ -48,7 +49,7 @@ export default function SharePredictionCard({ userName, predictions, matches, ex
     const predIds = Object.keys(predictions).slice(0, 5);
     let y = 100;
 
-    const total = exact + close;
+    const total = exact + outcome + goalCount;
     ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(`${userName}`, 24, y);
@@ -56,7 +57,7 @@ export default function SharePredictionCard({ userName, predictions, matches, ex
 
     ctx.font = '14px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`${total} tahmin • ${exact} tam isabet • ${close} yakın • ${points} puan`, 24, y);
+    ctx.fillText(`${total} tahmin • ${exact} tam • ${outcome} sonuç • ${goalCount} gol • ${points} puan`, 24, y);
     y += 36;
 
     predIds.forEach(matchId => {
@@ -104,7 +105,7 @@ export default function SharePredictionCard({ userName, predictions, matches, ex
       a.click();
       URL.revokeObjectURL(url);
     }, 'image/png');
-  }, [userName, predictions, matches, exact, close, points]);
+  }, [userName, predictions, matches, exact, outcome, goalCount, points]);
 
   if (Object.keys(predictions).length === 0) return null;
 

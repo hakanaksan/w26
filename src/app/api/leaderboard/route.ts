@@ -22,19 +22,24 @@ export async function GET(request: Request) {
         scores[row.match_id as string] = { home: row.home_score as number, away: row.away_score as number };
       }
 
-      let exact = 0, close = 0, missed = 0;
+      let exact = 0, outcome = 0, goalCount = 0, missed = 0;
       for (const [matchId, pred] of Object.entries(predictions)) {
         const score = scores[matchId];
         if (!score) continue;
         if (pred.homeScore === score.home && pred.awayScore === score.away) exact++;
-        else if (pred.homeScore === score.home || pred.awayScore === score.away || (pred.homeScore - pred.awayScore === score.home - score.away)) close++;
-        else missed++;
+        else {
+          const predOutcome = pred.homeScore > pred.awayScore ? 'home' : pred.homeScore < pred.awayScore ? 'away' : 'draw';
+          const actualOutcome = score.home > score.away ? 'home' : score.home < score.away ? 'away' : 'draw';
+          if (predOutcome === actualOutcome) outcome++;
+          else if (pred.homeScore === score.home || pred.awayScore === score.away) goalCount++;
+          else missed++;
+        }
       }
 
       return NextResponse.json({
         user: { id: userResult.rows[0].id, name: userResult.rows[0].name },
         predictions,
-        stats: { total: Object.keys(predictions).length, exact, close, missed, points: exact * 3 + close },
+        stats: { total: Object.keys(predictions).length, exact, outcome, goalCount, missed, points: exact * 3 + outcome * 2 + goalCount },
       });
     }
 
@@ -59,7 +64,8 @@ export async function GET(request: Request) {
       const uid = user.id as string;
       const userPreds = predictionsByUser[uid] || {};
       let exact = 0;
-      let close = 0;
+      let outcome = 0;
+      let goalCount = 0;
       let missed = 0;
       let totalPredictions = Object.keys(userPreds).length;
 
@@ -67,11 +73,16 @@ export async function GET(request: Request) {
         const score = scores[matchId];
         if (!score) continue;
         if (pred.home === score.home && pred.away === score.away) { exact++; }
-        else if (pred.home === score.home || pred.away === score.away || (pred.home - pred.away === score.home - score.away)) { close++; }
-        else { missed++; }
+        else {
+          const predOutcome = pred.home > pred.away ? 'home' : pred.home < pred.away ? 'away' : 'draw';
+          const actualOutcome = score.home > score.away ? 'home' : score.home < score.away ? 'away' : 'draw';
+          if (predOutcome === actualOutcome) { outcome++; }
+          else if (pred.home === score.home || pred.away === score.away) { goalCount++; }
+          else { missed++; }
+        }
       }
 
-      const points = exact * 3 + close * 1;
+      const points = exact * 3 + outcome * 2 + goalCount;
       const completedPredictions = Object.keys(userPreds).filter(mid => scores[mid]).length;
 
       return {
@@ -80,7 +91,8 @@ export async function GET(request: Request) {
         totalPredictions,
         completedPredictions,
         exact,
-        close,
+        outcome,
+        goalCount,
         missed,
         points,
       };
