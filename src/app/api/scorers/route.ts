@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { scorers } from '@/lib/schema';
-import { desc, sql, asc } from 'drizzle-orm';
+import { desc, sql, asc, and, eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -41,6 +41,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'matchId, teamId ve playerName zorunlu' }, { status: 400 });
     }
 
+    const existing = await db.select({ id: scorers.id }).from(scorers).where(
+      and(
+        eq(scorers.matchId, matchId),
+        eq(scorers.teamId, teamId),
+        eq(scorers.playerName, playerName),
+        eq(scorers.minute, minute || null),
+      )
+    ).limit(1);
+
+    if (existing.length > 0) {
+      return NextResponse.json({ id: existing[0].id, matchId, teamId, playerName, minute, isPenalty: !!isPenalty, isOwnGoal: !!isOwnGoal, duplicate: true });
+    }
+
     const id = `sc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
     await db.insert(scorers).values({
@@ -76,5 +89,33 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error('Scorer DELETE error:', error);
     return NextResponse.json({ error: 'Gol silinemedi' }, { status: 500 });
+  }
+}
+
+export async function PATCH() {
+  try {
+    const allScorers = await db.select().from(scorers).orderBy(asc(scorers.createdAt));
+    const seen = new Set<string>();
+    const duplicateIds: string[] = [];
+
+    for (const s of allScorers) {
+      const sig = `${s.matchId}|${s.teamId}|${s.playerName}|${s.minute}`;
+      if (seen.has(sig)) {
+        duplicateIds.push(s.id);
+      } else {
+        seen.add(sig);
+      }
+    }
+
+    if (duplicateIds.length > 0) {
+      for (const id of duplicateIds) {
+        await db.delete(scorers).where(eq(scorers.id, id));
+      }
+    }
+
+    return NextResponse.json({ removed: duplicateIds.length, total: allScorers.length });
+  } catch (error) {
+    console.error('Scorer PATCH cleanup error:', error);
+    return NextResponse.json({ error: 'Temizleme başarısız' }, { status: 500 });
   }
 }

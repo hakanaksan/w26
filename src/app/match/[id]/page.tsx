@@ -84,16 +84,17 @@ export default function MatchDetailPage() {
     if (!liveApiMatch || !liveApiMatch.goals || liveApiMatch.goals.length === 0) return;
 
     liveApiMatch.goals.forEach((goal: any) => {
-      const goalKey = `live_${liveApiMatch.id}_${goal.playerName}_${goal.minute}_${goal.isPenalty ? 'pen' : goal.isOwnGoal ? 'og' : 'goal'}`;
-      if (savedGoalKeys.current.has(goalKey)) return;
-      savedGoalKeys.current.add(goalKey);
+      const goalSig = `${goal.teamCode}|${goal.playerName}|${goal.minute}`;
+      if (savedGoalKeys.current.has(goalSig)) return;
+      savedGoalKeys.current.add(goalSig);
 
       const eventType: 'goal' | 'yellowCard' | 'redCard' = goal.isYellowCard ? 'yellowCard' : (goal.isRedCard ? 'redCard' : 'goal');
 
       setMatchEvents(prev => {
-        if (prev.some(e => e.id === goalKey)) return prev;
+        const existingSigs = new Set(prev.map(e => `${e.teamId}|${e.playerName}|${e.minute}`));
+        if (existingSigs.has(goalSig)) return prev;
         return [...prev, {
-          id: goalKey,
+          id: `live_${goalSig}`,
           teamId: goal.teamCode,
           playerName: goal.playerName,
           minute: goal.minute,
@@ -123,11 +124,12 @@ export default function MatchDetailPage() {
   useEffect(() => {
     fetch('/api/scorers').then(res => res.ok ? res.json() : { scorers: [] })
       .then(data => {
-        const events = (data.scorers || []).filter((s: any) => s.matchId === matchId).map((s: any) => ({ ...s, eventType: 'goal' as const }));
+        const dbEvents = (data.scorers || []).filter((s: any) => s.matchId === matchId).map((s: any) => ({ ...s, eventType: 'goal' as const }));
         setMatchEvents(prev => {
-          const liveKeys = new Set(prev.map(e => e.id));
-          const dbEvents = events.filter((e: any) => !liveKeys.has(e.id));
-          return [...prev, ...dbEvents];
+          const eventSig = (e: any) => `${e.teamId}|${e.playerName}|${e.minute}`;
+          const existingSigs = new Set(prev.map(eventSig));
+          const newEvents = dbEvents.filter((e: any) => !existingSigs.has(eventSig(e)));
+          return [...prev, ...newEvents];
         });
       })
       .catch(() => {});
