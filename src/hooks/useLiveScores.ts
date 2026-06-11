@@ -91,7 +91,7 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
         const currentMatches = matchesRef.current;
         for (const local of currentMatches) {
           const apiResult = matchApiToLocal(local, apiMatches);
-          if (apiResult && (apiResult.isCompleted || apiResult.isLive || apiResult.homeScore !== null)) {
+          if (apiResult && (apiResult.isCompleted || apiResult.isLive)) {
             fetch('/api/scores', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -114,7 +114,15 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
 
   const mergedMatches: Match[] = matches.map(localMatch => {
     const apiResult = matchApiToLocal(localMatch, liveMatches);
-    if (apiResult && (apiResult.isCompleted || apiResult.isLive || apiResult.homeScore !== null)) {
+    if (apiResult && (apiResult.isCompleted || apiResult.isLive)) {
+      return {
+        ...localMatch,
+        homeScore: apiResult.homeScore ?? localMatch.homeScore,
+        awayScore: apiResult.awayScore ?? localMatch.awayScore,
+        isCompleted: apiResult.isCompleted,
+      };
+    }
+    if (apiResult && apiResult.homeScore !== null && apiResult.homeScore > 0 || apiResult && apiResult.awayScore !== null && apiResult.awayScore > 0) {
       return {
         ...localMatch,
         homeScore: apiResult.homeScore ?? localMatch.homeScore,

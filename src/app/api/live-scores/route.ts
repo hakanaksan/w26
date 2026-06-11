@@ -160,6 +160,13 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
       const matchDate = (ev.date || comp.date || '').split('T')[0];
       const matchTime = comp.date ? new Date(comp.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Istanbul' }) : '';
 
+      const homeScoreVal = home.score !== undefined ? parseInt(home.score) : null;
+      const awayScoreVal = away.score !== undefined ? parseInt(away.score) : null;
+
+      // Scheduled matches have score "0"-"0" but haven't started — treat as null
+      const effectiveHomeScore = status.isLive || status.isCompleted ? homeScoreVal : (homeScoreVal !== null && homeScoreVal > 0 ? homeScoreVal : null);
+      const effectiveAwayScore = status.isLive || status.isCompleted ? awayScoreVal : (awayScoreVal !== null && awayScoreVal > 0 ? awayScoreVal : null);
+
       return {
         id: `espn_${ev.id}`,
         source: 'espn',
@@ -169,8 +176,8 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
         awayCode,
         homeLogo: home.team?.logo || '',
         awayLogo: away.team?.logo || '',
-        homeScore: home.score !== undefined ? parseInt(home.score) : null,
-        awayScore: away.score !== undefined ? parseInt(away.score) : null,
+        homeScore: effectiveHomeScore,
+        awayScore: effectiveAwayScore,
         status: comp.status?.type?.name || '',
         date: matchDate || dateStr,
         time: matchTime,
@@ -214,6 +221,11 @@ async function fetchTheSportsDB(dateStr: string): Promise<{ matches: MatchResult
         } catch {}
       }
 
+      const tsdbHomeScore = ev.intHomeScore !== null && ev.intHomeScore !== undefined ? parseInt(ev.intHomeScore) : null;
+        const tsdbAwayScore = ev.intAwayScore !== null && ev.intAwayScore !== undefined ? parseInt(ev.intAwayScore) : null;
+        const effectiveHomeScore2 = status.isLive || status.isCompleted ? tsdbHomeScore : (tsdbHomeScore !== null && tsdbHomeScore > 0 ? tsdbHomeScore : null);
+        const effectiveAwayScore2 = status.isLive || status.isCompleted ? tsdbAwayScore : (tsdbAwayScore !== null && tsdbAwayScore > 0 ? tsdbAwayScore : null);
+
       return {
         id: `tsdb_${ev.idEvent}`,
         source: 'thesportsdb',
@@ -223,8 +235,8 @@ async function fetchTheSportsDB(dateStr: string): Promise<{ matches: MatchResult
         awayCode,
         homeLogo: ev.strHomeTeamBadge || ev.strThumb || '',
         awayLogo: ev.strAwayTeamBadge || '',
-        homeScore: ev.intHomeScore !== null && ev.intHomeScore !== undefined ? parseInt(ev.intHomeScore) : null,
-        awayScore: ev.intAwayScore !== null && ev.intAwayScore !== undefined ? parseInt(ev.intAwayScore) : null,
+        homeScore: effectiveHomeScore2,
+        awayScore: effectiveAwayScore2,
         status: rawStatus,
         date: matchDate,
         time: matchTime,
