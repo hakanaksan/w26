@@ -48,6 +48,8 @@ interface GoalEvent {
   teamCode: string;
   isPenalty: boolean;
   isOwnGoal: boolean;
+  isYellowCard?: boolean;
+  isRedCard?: boolean;
 }
 
 interface MatchResult {
@@ -148,6 +150,8 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
               teamCode: resolvedTeamCode,
               isPenalty: d.penaltyKick === true,
               isOwnGoal: d.ownGoal === true,
+              isYellowCard: isYellow,
+              isRedCard: isRed,
             });
           }
         }

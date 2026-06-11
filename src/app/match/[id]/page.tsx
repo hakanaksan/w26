@@ -21,7 +21,7 @@ export default function MatchDetailPage() {
   const [homePred, setHomePred] = useState('');
   const [awayPred, setAwayPred] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
-  const [matchEvents, setMatchEvents] = useState<{ id: string; teamId: string; playerName: string; minute: number | null; isPenalty: boolean; isOwnGoal: boolean }[]>([]);
+  const [matchEvents, setMatchEvents] = useState<{ id: string; teamId: string; playerName: string; minute: number | null; isPenalty: boolean; isOwnGoal: boolean; eventType: 'goal' | 'yellowCard' | 'redCard' }[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventPlayer, setEventPlayer] = useState('');
   const [eventMinute, setEventMinute] = useState('');
@@ -84,44 +84,51 @@ export default function MatchDetailPage() {
     if (!liveApiMatch || !liveApiMatch.goals || liveApiMatch.goals.length === 0) return;
 
     liveApiMatch.goals.forEach((goal: any) => {
-      const goalKey = `live_${liveApiMatch.id}_${goal.playerName}_${goal.minute}`;
+      const goalKey = `live_${liveApiMatch.id}_${goal.playerName}_${goal.minute}_${goal.isPenalty ? 'pen' : goal.isOwnGoal ? 'og' : 'goal'}`;
       if (savedGoalKeys.current.has(goalKey)) return;
       savedGoalKeys.current.add(goalKey);
 
-      fetch('/api/scorers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          matchId,
+      const eventType: 'goal' | 'yellowCard' | 'redCard' = goal.isYellowCard ? 'yellowCard' : (goal.isRedCard ? 'redCard' : 'goal');
+
+      setMatchEvents(prev => {
+        if (prev.some(e => e.id === goalKey)) return prev;
+        return [...prev, {
+          id: goalKey,
           teamId: goal.teamCode,
           playerName: goal.playerName,
           minute: goal.minute,
           isPenalty: goal.isPenalty,
           isOwnGoal: goal.isOwnGoal,
-        }),
-      }).then(res => {
-        if (res.ok) {
-          setMatchEvents(prev => {
-            if (prev.some(e => e.id === goalKey)) return prev;
-            return [...prev, {
-              id: goalKey,
-              teamId: goal.teamCode,
-              playerName: goal.playerName,
-              minute: goal.minute,
-              isPenalty: goal.isPenalty,
-              isOwnGoal: goal.isOwnGoal,
-            }];
-          });
-        }
-      }).catch(() => {});
+          eventType,
+        }];
+      });
+
+      if (eventType === 'goal') {
+        fetch('/api/scorers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            matchId,
+            teamId: goal.teamCode,
+            playerName: goal.playerName,
+            minute: goal.minute,
+            isPenalty: goal.isPenalty,
+            isOwnGoal: goal.isOwnGoal,
+          }),
+        }).catch(() => {});
+      }
     });
   }, [liveMatches, matchId]);
 
   useEffect(() => {
     fetch('/api/scorers').then(res => res.ok ? res.json() : { scorers: [] })
       .then(data => {
-        const events = (data.scorers || []).filter((s: any) => s.matchId === matchId);
-        setMatchEvents(events);
+        const events = (data.scorers || []).filter((s: any) => s.matchId === matchId).map((s: any) => ({ ...s, eventType: 'goal' as const }));
+        setMatchEvents(prev => {
+          const liveKeys = new Set(prev.map(e => e.id));
+          const dbEvents = events.filter((e: any) => !liveKeys.has(e.id));
+          return [...prev, ...dbEvents];
+        });
       })
       .catch(() => {});
   }, [matchId]);
@@ -465,20 +472,41 @@ export default function MatchDetailPage() {
             <div className="space-y-2">
               {[...matchEvents].sort((a, b) => (a.minute || 90) - (b.minute || 90)).map((event, i) => {
                 const team = getTeam(event.teamId);
+                const isGoal = event.eventType === 'goal' || (!event.eventType && !event.isOwnGoal);
+                const isYellow = event.eventType === 'yellowCard';
+                const isRedCard = event.eventType === 'redCard';
                 return (
-                  <div key={event.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                      {event.minute != null ? `${event.minute}'` : '?'}
+                  <div key={event.id || i} className={`flex items-center gap-3 p-3 rounded-xl ${
+                    isRedCard ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' :
+                    isYellow ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' :
+                    'bg-gray-50 dark:bg-gray-700/50'
+                  }`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${
+                      isGoal ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' :
+                      isYellow ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' :
+                      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>
+                      {isGoal ? (event.minute != null ? `${event.minute}'` : '⚽') :
+                       isYellow ? (event.minute != null ? `${event.minute}'` : '🟨') :
+                       (event.minute != null ? `${event.minute}'` : '🟥')}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{event.playerName} {event.isOwnGoal && <span className="text-red-500 text-xs">(K.K.)</span>}</p>
                       <div className="flex items-center gap-1.5">
+                        {isGoal && <span className="text-base">⚽</span>}
+                        {isYellow && <span className="text-base">🟨</span>}
+                        {isRedCard && <span className="text-base">🟥</span>}
+                        <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                          {event.playerName || 'Bilinmiyor'}
+                          {event.isOwnGoal && <span className="text-red-500 text-xs ml-1">(K.K.)</span>}
+                          {event.isPenalty && <span className="text-amber-600 dark:text-amber-400 text-xs ml-1">(Penaltı)</span>}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
                         <img src={team.flag || getFlagUrl(event.teamId)} alt="" className="w-4 h-3 rounded object-cover" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{team.name}</span>
-                        {event.isPenalty && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">Penaltı</span>}
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{team.name || event.teamId}</span>
                       </div>
                     </div>
-                    {user && (
+                    {user && isGoal && (
                       <button onClick={() => handleDeleteEvent(event.id)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
                     )}
                   </div>

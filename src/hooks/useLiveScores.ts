@@ -10,6 +10,8 @@ interface GoalEvent {
   teamCode: string;
   isPenalty: boolean;
   isOwnGoal: boolean;
+  isYellowCard?: boolean;
+  isRedCard?: boolean;
 }
 
 interface LiveScoreMatch {
