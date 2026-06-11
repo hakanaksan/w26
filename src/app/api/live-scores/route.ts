@@ -127,19 +127,25 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
       const goals: GoalEvent[] = [];
       if (comp.details && Array.isArray(comp.details)) {
         for (const d of comp.details) {
-          const typeName = d.type?.name || d.type?.text || '';
-          const isGoal = typeName === 'Goal' || d.scoringPlay === true || d.type?.id === '70';
-          const isYellow = typeName === 'Yellow Card' || d.yellowCard === true || d.type?.id === '94';
-          const isRed = typeName === 'Red Card' || d.redCard === true;
+          const typeId = d.type?.id ?? 0;
+          const isGoal = typeId === 70 || d.scoringPlay === true;
+          const isYellow = typeId === 94 || d.yellowCard === true;
+          const isRed = typeId === 93 || d.redCard === true;
 
           if (isGoal || isYellow || isRed) {
             const athlete = d.athletesInvolved?.[0];
-            const teamInfo = d.team;
+            const eventTeamId = String(d.team?.id ?? '');
+            const isHome = eventTeamId === String(home.team?.id ?? '');
+            const isAway = eventTeamId === String(away.team?.id ?? '');
+            const resolvedTeamCode = isHome ? homeCode : (isAway ? awayCode : mapEspnTeamCode(d.team?.abbreviation || '', d.team?.displayName || ''));
+            const resolvedTeamName = d.team?.displayName || (isHome ? home.team?.displayName : away.team?.displayName) || '';
+            const resolvedPlayerName = athlete?.displayName || athlete?.shortName || '';
+
             goals.push({
-              minute: d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').replace('+', '')) || null : (Math.round((d.clock?.value || 0) / 60) || null),
-              playerName: athlete?.displayName || athlete?.shortName || '',
-              teamName: d.team?.displayName || '',
-              teamCode: mapEspnTeamCode(d.team?.abbreviation || '', d.team?.displayName || ''),
+              minute: d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').replace('+', '').split('+')[0]) || null : (Math.round((d.clock?.value || 0) / 60) || null),
+              playerName: resolvedPlayerName,
+              teamName: resolvedTeamName,
+              teamCode: resolvedTeamCode,
               isPenalty: d.penaltyKick === true,
               isOwnGoal: d.ownGoal === true,
             });
