@@ -33,24 +33,23 @@ export default function MatchDetailPage() {
   const liveMatch = matches.find(m => m.id === matchId);
 
   useEffect(() => {
-    const fetchScores = async () => {
+    const loadData = async () => {
       try {
         const res = await fetch('/api/scores');
         if (res.ok) {
           const data = await res.json();
           const scores: Record<string, { homeScore: number; awayScore: number; isCompleted: boolean }> = data.scores || {};
-          if (Object.keys(scores).length > 0) {
-            setLocalMatches(allMatches.map(m => {
-              const s = scores[m.id];
-              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
-              return m;
-            }));
-          }
+          setLocalMatches(allMatches.map(m => {
+            const s = scores[m.id];
+            if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
+            return m;
+          }));
         }
       } catch {}
+      await refreshLiveScores();
     };
-    fetchScores();
-  }, []);
+    loadData();
+  }, [matchId, refreshLiveScores]);
 
   useEffect(() => {
     if (!token) return;
