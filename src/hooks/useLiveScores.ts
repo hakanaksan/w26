@@ -95,7 +95,12 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
             fetch('/api/scores', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ matchId: local.id, homeScore: apiResult.homeScore ?? 0, awayScore: apiResult.awayScore ?? 0 }),
+              body: JSON.stringify({
+                matchId: local.id,
+                homeScore: apiResult.homeScore ?? 0,
+                awayScore: apiResult.awayScore ?? 0,
+                isCompleted: apiResult.isCompleted,
+              }),
             }).catch(() => {});
           }
         }
@@ -114,7 +119,7 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
         ...localMatch,
         homeScore: apiResult.homeScore ?? localMatch.homeScore,
         awayScore: apiResult.awayScore ?? localMatch.awayScore,
-        isCompleted: apiResult.isCompleted || localMatch.isCompleted,
+        isCompleted: apiResult.isCompleted,
       };
     }
     return localMatch;

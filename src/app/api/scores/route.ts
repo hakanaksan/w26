@@ -19,15 +19,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { matchId, homeScore, awayScore } = await request.json();
+  const { matchId, homeScore, awayScore, isCompleted: isCompletedRaw } = await request.json();
 
   if (!matchId || homeScore === undefined || awayScore === undefined) {
     return NextResponse.json({ error: 'Eksik bilgi' }, { status: 400 });
   }
 
+  const isCompleted = isCompletedRaw === false ? 0 : 1;
+
   const id = `score_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const now = new Date().toISOString();
-  const isCompleted = 1;
 
   await client.execute({
     sql: `INSERT INTO match_scores (id, match_id, home_score, away_score, is_completed, updated_at)
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     args: [id, matchId, homeScore, awayScore, isCompleted, now],
   });
 
-  return NextResponse.json({ id, matchId, homeScore, awayScore, isCompleted: true });
+  return NextResponse.json({ id, matchId, homeScore, awayScore, isCompleted: isCompleted === 1 });
 }
 
 export async function DELETE(request: Request) {

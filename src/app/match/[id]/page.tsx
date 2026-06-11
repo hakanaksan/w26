@@ -142,7 +142,9 @@ export default function MatchDetailPage() {
   const currentMatch = liveMatch || match;
   const homeTeam = getTeam(currentMatch.homeTeamId);
   const awayTeam = getTeam(currentMatch.awayTeamId);
-  const isCompleted = currentMatch.isCompleted || currentMatch.homeScore !== undefined;
+  const hasScore = currentMatch.homeScore !== undefined && currentMatch.awayScore !== undefined;
+  const isCompleted = currentMatch.isCompleted === true;
+  const isLive = !isCompleted && hasScore;
 
   const handlePredict = async () => {
     const h = parseInt(homePred);
@@ -223,13 +225,14 @@ export default function MatchDetailPage() {
 
   const [scoreHome, setScoreHome] = useState('');
   const [scoreAway, setScoreAway] = useState('');
+  const [scoreCompleted, setScoreCompleted] = useState(true);
   const [isEditingScore, setIsEditingScore] = useState(false);
 
   const handleSaveScore = async () => {
     const h = parseInt(scoreHome);
     const a = parseInt(scoreAway);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
-    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: h, awayScore: a, isCompleted: true } : m));
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: h, awayScore: a, isCompleted: scoreCompleted } : m));
     setIsEditingScore(false);
     setScoreHome('');
     setScoreAway('');
@@ -237,7 +240,7 @@ export default function MatchDetailPage() {
       await fetch('/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, homeScore: h, awayScore: a }),
+        body: JSON.stringify({ matchId, homeScore: h, awayScore: a, isCompleted: scoreCompleted }),
       });
     } catch {}
   };
@@ -302,16 +305,18 @@ export default function MatchDetailPage() {
             </div>
 
             <div className="text-center px-4">
-              {isCompleted || currentMatch.homeScore !== undefined ? (
+              {hasScore ? (
                 <div>
                   <p className="text-5xl font-black text-gray-900 dark:text-white">{currentMatch.homeScore} - {currentMatch.awayScore}</p>
                   {isCompleted ? (
                     <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">Maç Bitti</p>
-                  ) : (
+                  ) : isLive ? (
                     <div className="flex items-center justify-center gap-2 mt-2">
                       <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                       <p className="text-sm text-red-600 dark:text-red-400 font-bold">CANLI</p>
                     </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Skor girildi</p>
                   )}
                   {user && (
                     <div className="mt-2 flex items-center justify-center gap-2">
@@ -339,7 +344,7 @@ export default function MatchDetailPage() {
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <input type="checkbox" className="rounded" defaultChecked />
+                      <input type="checkbox" checked={scoreCompleted} onChange={e => setScoreCompleted(e.target.checked)} className="rounded" />
                       Maç bitti olarak işaretle
                     </label>
                   </div>
