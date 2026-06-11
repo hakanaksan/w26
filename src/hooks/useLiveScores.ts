@@ -29,6 +29,7 @@ interface LiveScoreMatch {
   isLive: boolean;
   isCompleted: boolean;
   goals: GoalEvent[];
+  minute: number | null;
 }
 
 interface LiveScoresResult {
