@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import type { Match } from '@/data/fixtures';
+import { getMatchStatus } from '@/lib/match-status';
 
 interface MatchCardProps {
   match: Match;
@@ -34,7 +35,7 @@ function FlagImg({ code, size = 'w-16 h-11' }: { code: string; size?: string }) 
 export function MiniMatchCard({ match }: { match: Match }) {
   const home = getTeam(match.homeTeamId);
   const away = getTeam(match.awayTeamId);
-  const isCompleted = match.isCompleted || match.homeScore !== undefined;
+  const { hasScore, isCompleted, isLive } = getMatchStatus(match);
 
   return (
     <a href={`/match/${match.id}`} className="block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all">
@@ -47,19 +48,29 @@ export function MiniMatchCard({ match }: { match: Match }) {
         <span>{match.venue}, {match.city}</span>
         <span className="font-semibold text-gray-600 dark:text-gray-400">{match.country}</span>
       </div>
-      {isCompleted ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1">
-            <img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover" />
-            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{home.name}</span>
+      {hasScore ? (
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-1">
+              <img src={home.flag || getFlagUrl(match.homeTeamId)} alt={home.name} className="w-8 h-6 rounded object-cover" />
+              <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{home.name}</span>
+            </div>
+            <div className="px-3">
+              <span className="text-xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{away.name}</span>
+              <img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover" />
+            </div>
           </div>
-          <div className="px-3">
-            <span className="text-xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</span>
-          </div>
-          <div className="flex items-center gap-2 flex-1 justify-end">
-            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">{away.name}</span>
-            <img src={away.flag || getFlagUrl(match.awayTeamId)} alt={away.name} className="w-8 h-6 rounded object-cover" />
-          </div>
+          {isCompleted ? (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1 text-center">Maç Bitti</p>
+          ) : isLive ? (
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+              <p className="text-xs text-red-600 dark:text-red-400 font-bold">CANLI</p>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="flex items-center justify-between">
@@ -88,7 +99,7 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
 
   const homeTeam = getTeam(match.homeTeamId);
   const awayTeam = getTeam(match.awayTeamId);
-  const isCompleted = match.isCompleted || match.homeScore !== undefined;
+  const { hasScore, isCompleted, isLive } = getMatchStatus(match);
 
   const getStageStyle = (stage: string) => {
     switch (stage) {
@@ -156,10 +167,19 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
             </div>
 
             <div className="px-2 flex-shrink-0">
-              {isCompleted ? (
+              {hasScore ? (
                 <div className="text-center">
                   <p className="text-3xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                  {isCompleted ? (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                  ) : isLive ? (
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">CANLI</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Skor girildi</p>
+                  )}
                 </div>
               ) : (
                 <div className="text-center">

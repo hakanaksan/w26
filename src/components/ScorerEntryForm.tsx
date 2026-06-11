@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { getMatchStatus } from '@/lib/match-status';
 import { Match } from '@/data/fixtures';
 
 interface ScorerEntryFormProps {
@@ -20,7 +21,7 @@ export default function ScorerEntryForm({ matches, onSubmitted }: ScorerEntryFor
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const completedMatches = matches.filter(m => m.isCompleted || m.homeScore !== undefined);
+  const completedMatches = matches.filter(m => getMatchStatus(m).hasScore);
 
   const selectedMatch = completedMatches.find(m => m.id === matchId);
   const teamOptions = selectedMatch ? [

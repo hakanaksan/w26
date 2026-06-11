@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { getMatchStatus } from '@/lib/match-status';
 
 type BracketRound = {
   name: string;
@@ -107,7 +108,7 @@ export default function BracketView() {
   };
 
   const totalKnockoutMatches = matches.filter(m => knockoutStages.includes(m.stage)).length;
-  const completedKnockout = matches.filter(m => knockoutStages.includes(m.stage) && (m.isCompleted || m.homeScore !== undefined)).length;
+  const completedKnockout = matches.filter(m => knockoutStages.includes(m.stage) && getMatchStatus(m).hasScore).length;
 
   return (
     <div className="space-y-6">
@@ -154,10 +155,10 @@ export default function BracketView() {
                 const home = getTeam(match.homeTeamId);
                 const away = getTeam(match.awayTeamId);
                 const isTBD = match.homeTeamId === 'TBD' || match.awayTeamId === 'TBD';
-                const isCompleted = match.isCompleted || match.homeScore !== undefined;
-                const pred = predictions[match.id];
-                const homeWon = isCompleted && match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore > match.awayScore;
-                const awayWon = isCompleted && match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore < match.awayScore;
+const { hasScore, isCompleted, isLive } = getMatchStatus(match);
+const pred = predictions[match.id];
+const homeWon = hasScore && match.homeScore! > match.awayScore!;
+const awayWon = hasScore && match.homeScore! < match.awayScore!;
 
                 return (
                   <div key={match.id} className={`relative bg-white dark:bg-gray-800 border rounded-xl overflow-hidden transition-all hover:shadow-md ${
@@ -180,7 +181,7 @@ export default function BracketView() {
                           <span className={`text-sm font-medium flex-1 truncate ${homeWon ? 'text-emerald-700 dark:text-emerald-300 font-bold' : isTBD ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
                             {home.name}
                           </span>
-                          {isCompleted ? (
+                          {hasScore ? (
                             <span className={`text-sm font-black tabular-nums ${homeWon ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>{match.homeScore}</span>
                           ) : pred ? (
                             <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">{pred.homeScore}</span>
@@ -192,7 +193,7 @@ export default function BracketView() {
                           <span className={`text-sm font-medium flex-1 truncate ${awayWon ? 'text-emerald-700 dark:text-emerald-300 font-bold' : isTBD ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
                             {away.name}
                           </span>
-                          {isCompleted ? (
+                          {hasScore ? (
                             <span className={`text-sm font-black tabular-nums ${awayWon ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>{match.awayScore}</span>
                           ) : pred ? (
                             <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">{pred.awayScore}</span>
@@ -200,13 +201,19 @@ export default function BracketView() {
                         </div>
                       </div>
 
-                      {isCompleted && (
+                      {hasScore && (
                         <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Maç Bitti</span>
+                          {isCompleted ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Maç Bitti</span>
+                          ) : isLive ? (
+                            <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">CANLI</span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Skor girildi</span>
+                          )}
                         </div>
                       )}
 
-                      {!isCompleted && !isTBD && (
+                      {!hasScore && !isTBD && (
                         <button onClick={() => router.push(`/match/${match.id}`)} className="mt-2 w-full text-xs text-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                           Detay →
                         </button>

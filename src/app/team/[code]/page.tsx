@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl, groups, teams as allTeams, TeamInfo } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { getMatchStatus } from '@/lib/match-status';
 
 export default function TeamPage() {
   const { user, token } = useAuth();
@@ -53,8 +54,8 @@ export default function TeamPage() {
     }
   }, [token]);
 
-  const completedMatches = teamMatches.filter(m => m.isCompleted || m.homeScore !== undefined);
-  const upcomingMatches = teamMatches.filter(m => !m.isCompleted && m.homeScore === undefined);
+const completedMatches = teamMatches.filter(m => getMatchStatus(m).hasScore);
+const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
 
   const goalsFor = completedMatches.reduce((sum, m) => {
     return sum + (m.homeTeamId === code ? (m.homeScore || 0) : (m.awayScore || 0));
@@ -70,7 +71,7 @@ export default function TeamPage() {
   const losses = completedMatches.length - wins - draws;
 
   const standings = groupTeams.map(([, t]) => {
-    const tMatches = matches.filter(m => (m.homeTeamId === t.code || m.awayTeamId === t.code) && m.group === team.groupId && (m.isCompleted || m.homeScore !== undefined));
+    const tMatches = matches.filter(m => (m.homeTeamId === t.code || m.awayTeamId === t.code) && m.group === team.groupId && getMatchStatus(m).hasScore);
     let pts = 0, gf = 0, ga = 0, w = 0, d = 0, l = 0;
     tMatches.forEach(m => {
       const isHome = m.homeTeamId === t.code;
@@ -277,8 +278,8 @@ export default function TeamPage() {
               teamMatches.sort((a, b) => a.date.localeCompare(b.date)).map(match => {
                 const homeTeam = getTeam(match.homeTeamId);
                 const awayTeam = getTeam(match.awayTeamId);
-                const isCompleted = match.isCompleted || match.homeScore !== undefined;
-                return (
+const { hasScore, isCompleted: matchCompleted, isLive: matchLive } = getMatchStatus(match);
+                 return (
                   <button key={match.id} onClick={() => router.push(`/match/${match.id}`)} className="w-full text-left match-card">
                     <div className="flex items-center justify-between mb-3">
                       <span className={`stage-badge border ${getStageStyle(match.stage)}`}>{match.stage}</span>
@@ -290,12 +291,18 @@ export default function TeamPage() {
                         <span className="font-bold text-gray-900 dark:text-white text-sm">{homeTeam.name}</span>
                       </div>
                       <div className="px-4 flex-shrink-0">
-                        {isCompleted ? (
-                          <div className="text-center">
-                            <p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
-                          </div>
-                        ) : (
+{hasScore ? (
+                           <div className="text-center">
+                             <p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                             {matchCompleted ? (
+                               <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                             ) : matchLive ? (
+                               <p className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">CANLI</p>
+                             ) : (
+                               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">Skor girildi</p>
+                             )}
+                           </div>
+                         ) : (
                           <div className="text-center">
                             <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{match.time}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

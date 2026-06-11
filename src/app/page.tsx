@@ -18,6 +18,7 @@ import LeaguesView from '@/components/LeaguesView';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { getMatchStatus } from '@/lib/match-status';
 
 export default function Home() {
   const { user, token } = useAuth();
@@ -177,21 +178,21 @@ export default function Home() {
   const getUpcomingMatches = () => {
     const now = new Date();
     const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    return matches.filter(m => !m.isCompleted && m.homeScore === undefined)
+    return matches.filter(m => !getMatchStatus(m).hasScore)
       .filter(m => { const d = new Date(`${m.date}T${m.time}:00`); return d >= now && d <= in24h; })
       .sort((a, b) => new Date(`${a.date}T${a.time}:00`).getTime() - new Date(`${b.date}T${b.time}:00`).getTime());
   };
 
   const getNextUpcomingMatches = () => {
     const now = new Date();
-    return matches.filter(m => !m.isCompleted && m.homeScore === undefined)
+    return matches.filter(m => !getMatchStatus(m).hasScore)
       .filter(m => new Date(`${m.date}T${m.time}:00`) > now)
       .sort((a, b) => new Date(`${a.date}T${a.time}:00`).getTime() - new Date(`${b.date}T${b.time}:00`).getTime())
       .slice(0, 6);
   };
 
   const getRecentCompletedMatches = () => {
-    return matches.filter(m => m.isCompleted || m.homeScore !== undefined)
+    return matches.filter(m => getMatchStatus(m).hasScore)
       .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
   };
 
@@ -223,7 +224,7 @@ export default function Home() {
   const nextUpcoming = getNextUpcomingMatches();
   const recentCompleted = getRecentCompletedMatches();
   const favoriteMatches = matches.filter(m => favorites.includes(m.id));
-  const completedMatches = matches.filter(m => m.isCompleted || m.homeScore !== undefined);
+  const completedMatches = matches.filter(m => getMatchStatus(m).hasScore);
 
   if (isLoading) {
     return (
@@ -414,6 +415,7 @@ export default function Home() {
                   const homeTeam = getTeam(match.homeTeamId);
                   const awayTeam = getTeam(match.awayTeamId);
                   const pred = predictions[match.id];
+                  const { isCompleted: matchCompleted, isLive: matchLive } = getMatchStatus(match);
                   return (
                     <div key={match.id} className="match-card">
                       <div className="flex items-center justify-between mb-3">
@@ -426,8 +428,14 @@ export default function Home() {
                           <span className="font-semibold text-gray-900 dark:text-white">{homeTeam.name}</span>
                         </div>
                         <div className="text-center px-4">
-                          <p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
-                          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+<p className="text-2xl font-black text-gray-900 dark:text-white">{match.homeScore} - {match.awayScore}</p>
+                           {matchCompleted ? (
+                             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Maç Bitti</p>
+                           ) : matchLive ? (
+                             <p className="text-xs text-red-600 dark:text-red-400 font-bold mt-1">CANLI</p>
+                           ) : (
+                             <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">Skor girildi</p>
+                           )}
                         </div>
                         <div className="flex items-center gap-3 flex-1 justify-end">
                           <span className="font-semibold text-gray-900 dark:text-white">{awayTeam.name}</span>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { teams as allTeams, getTeam, getFlagUrl } from '@/data/teams';
 import { matches as allMatches } from '@/data/fixtures';
+import { getMatchStatus } from '@/lib/match-status';
 
 interface CompareModalProps {
   onClose: () => void;
@@ -18,7 +19,7 @@ export default function CompareModal({ onClose }: CompareModalProps) {
   const b = teamB ? getTeam(teamB) : null;
 
   const getTeamStats = (code: string) => {
-    const tm = allMatches.filter(m => (m.homeTeamId === code || m.awayTeamId === code) && (m.isCompleted || m.homeScore !== undefined));
+    const tm = allMatches.filter(m => (m.homeTeamId === code || m.awayTeamId === code) && getMatchStatus(m).hasScore);
     let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
     tm.forEach(m => {
       const isHome = m.homeTeamId === code;
