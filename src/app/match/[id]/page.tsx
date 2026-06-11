@@ -33,6 +33,13 @@ export default function MatchDetailPage() {
   const { mergedMatches: matches, liveMatches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
   const liveMatch = matches.find(m => m.id === matchId);
 
+  const liveApiData = liveMatches.find((m: any) => {
+    const localM = allMatches.find(l => l.id === matchId);
+    if (!localM) return false;
+    return m.date === localM.date && m.homeCode === localM.homeTeamId && m.awayCode === localM.awayTeamId;
+  });
+  const liveMinute = liveApiData?.minute ?? null;
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -314,6 +321,7 @@ export default function MatchDetailPage() {
                     <div className="flex items-center justify-center gap-2 mt-2">
                       <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                       <p className="text-sm text-red-600 dark:text-red-400 font-bold">CANLI</p>
+                      {liveMinute && <span className="text-sm text-red-500 dark:text-red-300 font-medium">{liveMinute}'</span>}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Skor girildi</p>
@@ -448,7 +456,7 @@ export default function MatchDetailPage() {
           </div>
         </div>
 
-        {isCompleted && matchEvents.length > 0 && (
+        {(hasScore || isLive) && matchEvents.length > 0 && (
           <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -480,7 +488,7 @@ export default function MatchDetailPage() {
           </div>
         )}
 
-        {isCompleted && user && (
+        {hasScore && user && (
           <div className="mt-4">
             {!showEventForm ? (
               <button onClick={() => { setShowEventForm(true); setEventTeam(match.homeTeamId); }} className="btn-secondary w-full py-2.5 text-sm">
