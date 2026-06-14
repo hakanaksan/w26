@@ -293,6 +293,148 @@ export function resolveBracket(
   return slots;
 }
 
+export function isGroupComplete(groupId: string, matchData: Match[]): boolean {
+  const groupMatches = matchData.filter(m => m.group === groupId);
+  if (groupMatches.length < 6) return false;
+  return groupMatches.every(m => m.isCompleted && m.homeScore !== undefined && m.awayScore !== undefined);
+}
+
+export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
+  const standings = calculateGroupStandings(matchData, {});
+  const slots: BracketSlot[] = [];
+  const winners: Record<string, string> = {};
+
+  const groupPosition = (pos: string): string => {
+    const group = pos.charAt(0);
+    const position = parseInt(pos.charAt(1));
+    const groupTeams = standings[group];
+    if (!groupTeams || !groupTeams[position - 1]) return 'TBD';
+    return groupTeams[position - 1].code;
+  };
+
+  const allThird: { code: string; pts: number; gd: number; gf: number; group: string }[] = [];
+  for (const [groupId, teams] of Object.entries(standings)) {
+    if (teams[2]) allThird.push({ code: teams[2].code, pts: teams[2].pts, gd: teams[2].gd, gf: teams[2].gf, group: groupId });
+  }
+  allThird.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+
+  const thirdPlaceMap: Record<string, string> = {};
+  for (let i = 0; i < 8 && i < allThird.length; i++) {
+    thirdPlaceMap[`3RD_${i + 1}`] = allThird[i].code;
+  }
+
+  const resolvePosition = (pos: string): string => {
+    if (pos.startsWith('3RD_')) return thirdPlaceMap[pos] || 'TBD';
+    if (pos.length === 2 && pos[1] >= '1' && pos[1] <= '4') return groupPosition(pos);
+    return 'TBD';
+  };
+
+  for (const slot of SON32_SLOTS) {
+    const homeTeam = resolvePosition(slot.homeSource);
+    const awayTeam = resolvePosition(slot.awaySource);
+    let homeScore: number | undefined;
+    let awayScore: number | undefined;
+    let isCompleted = false;
+    let winner = 'TBD';
+
+    const actual = matchData.find(m => m.id === slot.matchId);
+    if (actual && actual.isCompleted && actual.homeScore !== undefined && actual.awayScore !== undefined) {
+      homeScore = actual.homeScore;
+      awayScore = actual.awayScore;
+      isCompleted = true;
+    }
+
+    if (homeScore !== undefined && awayScore !== undefined && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
+      winner = homeScore > awayScore ? homeTeam : (homeScore < awayScore ? awayTeam : homeTeam);
+      winners[slot.matchId] = winner;
+    }
+
+    slots.push({
+      matchId: slot.matchId,
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
+      round: 'Son 32',
+      homeSource: slot.homeSource,
+      awaySource: slot.awaySource,
+      homeScore,
+      awayScore,
+      isCompleted,
+      winner,
+    });
+  }
+
+  const resolvePair = (matchId: string, homeFrom: string, awayFrom: string, round: string) => {
+    let homeTeam = 'TBD';
+    let awayTeam = 'TBD';
+
+    if (homeFrom.endsWith('_L')) {
+      const srcMatch = homeFrom.replace('_L', '');
+      const srcSlot = slots.find(s => s.matchId === srcMatch);
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+        homeTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
+      }
+    } else if (homeFrom.endsWith('_W')) {
+      homeTeam = winners[homeFrom.replace('_W', '')] || 'TBD';
+    } else if (homeFrom.startsWith('M')) {
+      homeTeam = winners[homeFrom] || 'TBD';
+    } else {
+      homeTeam = resolvePosition(homeFrom);
+    }
+
+    if (awayFrom.endsWith('_L')) {
+      const srcMatch = awayFrom.replace('_L', '');
+      const srcSlot = slots.find(s => s.matchId === srcMatch);
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+        awayTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
+      }
+    } else if (awayFrom.endsWith('_W')) {
+      awayTeam = winners[awayFrom.replace('_W', '')] || 'TBD';
+    } else if (awayFrom.startsWith('M')) {
+      awayTeam = winners[awayFrom] || 'TBD';
+    } else {
+      awayTeam = resolvePosition(awayFrom);
+    }
+
+    let homeScore: number | undefined;
+    let awayScore: number | undefined;
+    let isCompleted = false;
+    let winner = 'TBD';
+
+    const actual = matchData.find(m => m.id === matchId);
+    if (actual && actual.isCompleted && actual.homeScore !== undefined && actual.awayScore !== undefined) {
+      homeScore = actual.homeScore;
+      awayScore = actual.awayScore;
+      isCompleted = true;
+    }
+
+    if (homeScore !== undefined && awayScore !== undefined && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
+      winner = homeScore > awayScore ? homeTeam : (homeScore < awayScore ? awayTeam : homeTeam);
+      winners[matchId] = winner;
+    }
+
+    slots.push({
+      matchId,
+      homeTeamId: homeTeam,
+      awayTeamId: awayTeam,
+      round,
+      homeSource: homeFrom,
+      awaySource: awayFrom,
+      homeScore,
+      awayScore,
+      isCompleted,
+      winner,
+    });
+  };
+
+  for (const s of SON16_SLOTS) resolvePair(s.matchId, s.homeFrom, s.awayFrom, 'Son 16');
+  for (const s of QF_SLOTS) resolvePair(s.matchId, s.homeFrom, s.awayFrom, 'Çeyrek Final');
+  for (const s of SF_SLOTS) resolvePair(s.matchId, s.homeFrom, s.awayFrom, 'Yarı Final');
+  for (const s of FINAL_SLOTS) resolvePair(s.matchId, s.homeFrom, s.awayFrom, 'Final');
+  for (const s of THIRD_PLACE_SLOTS) resolvePair(s.matchId, s.homeFrom, s.awayFrom, 'Üçüncülük');
+
+  return slots;
+}
+
 export function getNextRoundMatch(matchId: string): string | null {
   const nextMap: Record<string, string> = {
     'M073': 'M085', 'M074': 'M085',
