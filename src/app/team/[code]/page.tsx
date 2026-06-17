@@ -107,7 +107,7 @@ const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
   if (code === 'TBD' || !team.flag) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <Header activeTab="fixtures" onTabChange={() => {}} />
+        <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-500 dark:text-gray-400">Takım bulunamadı.</p>
           <button onClick={() => router.push('/')} className="btn-primary mt-4">Ana Sayfaya Dön</button>
@@ -125,7 +125,7 @@ const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-      <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
+      <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="relative rounded-3xl overflow-hidden mb-8 shadow-xl" style={{ background: `linear-gradient(135deg, ${team.colors.primary}, ${team.colors.primary}dd, ${team.colors.secondary}88)` }}>

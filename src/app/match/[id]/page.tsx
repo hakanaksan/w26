@@ -146,7 +146,7 @@ export default function MatchDetailPage() {
   if (!match) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
+        <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-500 dark:text-gray-400">Maç bulunamadı.</p>
           <button onClick={() => router.push('/')} className="btn-primary mt-4">Ana Sayfaya Dön</button>
@@ -276,7 +276,7 @@ export default function MatchDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-      <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
+      <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors">

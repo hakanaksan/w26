@@ -23,6 +23,26 @@ import { getMatchStatus } from '@/lib/match-status';
 export default function Home() {
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('fixtures');
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    window.history.pushState(null, '', `/?tab=${tab}`);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab') || 'fixtures';
+      setActiveTab(tab);
+    };
+
+    handlePopState();
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
   const [bracketView, setBracketView] = useState<'real' | 'predict'>('real');
   const [selectedDate, setSelectedDate] = useState('2026-06-11');
   const [selectedGroup, setSelectedGroup] = useState('A');
@@ -248,7 +268,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header activeTab={activeTab} onTabChange={handleTabChange} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'fixtures' && (

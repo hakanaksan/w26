@@ -45,7 +45,7 @@ export default function AllNewsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-      <Header activeTab="fixtures" onTabChange={() => router.push('/')} />
+      <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-6">
