@@ -44,7 +44,13 @@ export default function Home() {
     };
   }, []);
   const [bracketView, setBracketView] = useState<'real' | 'predict'>('real');
-  const [selectedDate, setSelectedDate] = useState('2026-06-11');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date().toLocaleDateString('sv-SE');
+    if (today >= '2026-06-11' && today <= '2026-07-20') {
+      return today;
+    }
+    return '2026-06-11';
+  });
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [localMatches, setLocalMatches] = useState(allMatches);
   const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
@@ -290,7 +296,7 @@ export default function Home() {
 
   const getRecentCompletedMatches = () => {
     return matches.filter(m => getMatchStatus(m).hasScore)
-      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
   };
 
   const getMatchStats = () => {
