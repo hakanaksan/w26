@@ -67,7 +67,7 @@ export default function GroupStandings({ selectedGroup, onGroupChange, matches }
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {groups.map(group => (
           <button key={group.id} onClick={() => onGroupChange(group.id)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${selectedGroup === group.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${selectedGroup === group.id ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 dark:shadow-emerald-900/40' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
             {group.name}
           </button>
         ))}
@@ -97,12 +97,12 @@ export default function GroupStandings({ selectedGroup, onGroupChange, matches }
                 return (
                   <tr key={standing.teamId} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${isQualified ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
                     <td className="py-4 px-4">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${isQualified ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>{index + 1}</div>
+                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${isQualified ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>{index + 1}</div>
                     </td>
                     <td className="py-4 px-4">
                       <Link href={`/team/${standing.teamId}`} className="flex items-center gap-3 group">
                         <img src={team.flag || getFlagUrl(standing.teamId)} alt={team.name} className="w-8 h-6 rounded object-cover group-hover:opacity-80 transition-opacity" />
-                        <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{team.name}</span>
+                        <span className="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">{team.name}</span>
                       </Link>
                     </td>
                     <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300 font-medium">{standing.played}</td>
@@ -112,7 +112,7 @@ export default function GroupStandings({ selectedGroup, onGroupChange, matches }
                     <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{standing.goalsFor}</td>
                     <td className="text-center py-4 px-2 text-gray-600 dark:text-gray-300">{standing.goalsAgainst}</td>
                     <td className="text-center py-4 px-2 font-medium"><span className={standing.goalDifference > 0 ? 'text-emerald-600 dark:text-emerald-400' : standing.goalDifference < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>{standing.goalDifference > 0 ? '+' : ''}{standing.goalDifference}</span></td>
-                    <td className="text-center py-4 px-4"><span className="text-lg font-black text-blue-600 dark:text-blue-400">{standing.points}</span></td>
+                    <td className="text-center py-4 px-4"><span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{standing.points}</span></td>
                   </tr>
                 );
               })}

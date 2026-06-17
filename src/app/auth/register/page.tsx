@@ -39,10 +39,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-blue-200 dark:shadow-blue-900">🏆</div>
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 via-indigo-600 to-amber-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-emerald-500/20 dark:shadow-indigo-500/30">⚽</div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-white">Kayıt Ol</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">Dünya Kupası 2026 tahminlerine başla</p>
         </div>

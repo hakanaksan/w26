@@ -73,12 +73,12 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const isActiveInMore = moreTabs.some(t => t.id === activeTab);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">
+    <header className="sticky top-0 z-50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/50">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18L18 8.5v7l-6 3.75L6 15.5v-7l6-3.32z"/></svg>
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 via-indigo-600 to-amber-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 dark:shadow-indigo-500/30 animate-pulse">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 2a7.93 7.93 0 013.9 1L12.5 8.41a1 1 0 01-1 0L8.1 5A7.93 7.93 0 0112 4zM4.27 7.42a8 8 0 012.31-2.31l3.05 3.05a1 1 0 010 1.42L5.87 13.3A8 8 0 014.27 7.42zm2.93 8.16l2.88-2.88a1 1 0 011.42 0l3.05 3.05a8 8 0 01-7.35.15v-.32zm9.15 1.15L13.3 13.68a1 1 0 010-1.42l3.76-3.76a8 8 0 011.6 5.88 8 8 0 01-2.31 2.31zM12.5 10.41l2.09-2.09A7.93 7.93 0 0119 12a7.93 7.93 0 01-1 3.9l-3.41-3.41a1 1 0 01-.09-1.08z"/></svg>
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                   onClick={() => handleTabClick(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     activeTab === tab.id
-                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                   title={tab.label}
@@ -105,7 +105,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className={`flex items-center gap-1 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
                     isActiveInMore
-                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
@@ -121,7 +121,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                         onClick={() => { handleTabClick(tab.id); setMenuOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all ${
                           activeTab === tab.id
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                         }`}
                       >
@@ -136,7 +136,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                         onClick={() => { handleTabClick(tab.id); setMenuOpen(false); }}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all ${
                           activeTab === tab.id
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                         }`}
                       >
@@ -156,7 +156,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                   onClick={() => handleTabClick(tab.id)}
                   className={`p-2 rounded-lg transition-all ${
                     activeTab === tab.id
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                       : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                   title={tab.label}
@@ -184,9 +184,9 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium text-sm hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition-all"
                 >
-                  <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 </button>
@@ -239,7 +239,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
                   }}
                   className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     activeTab === tab.id
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
@@ -249,7 +249,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
               ))}
             </div>
             {!user && (
-              <Link href="/auth/login" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 mt-1">
+              <Link href="/auth/login" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 mt-1">
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 Giriş Yap
               </Link>

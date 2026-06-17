@@ -50,11 +50,11 @@ export default function DaySelector({ selectedDate, onDateChange }: DaySelectorP
 
   return (
     <div className="relative">
-      <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors -ml-2">
-        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+      <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors -ml-2">
+        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
       </button>
-      <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors -mr-2">
-        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+      <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors -mr-2">
+        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
       </button>
       <div ref={scrollRef} className="overflow-x-auto px-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
@@ -71,8 +71,8 @@ export default function DaySelector({ selectedDate, onDateChange }: DaySelectorP
                 onClick={() => onDateChange(date)}
                 className={`flex flex-col items-center px-4 py-3 rounded-2xl transition-all min-w-[88px] ${
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 scale-105'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
                 }`}
               >
                 <span className="text-xs font-medium opacity-70">{weekday}</span>
@@ -81,7 +81,7 @@ export default function DaySelector({ selectedDate, onDateChange }: DaySelectorP
                 <div className="flex items-center gap-1 mt-1">
                   <span className="text-xs">{stageIcon}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    isSelected ? 'bg-white/20' : 'bg-gray-100'
+                    isSelected ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'
                   }`}>
                     {matchCount}
                   </span>

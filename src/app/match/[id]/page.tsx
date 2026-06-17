@@ -145,7 +145,7 @@ export default function MatchDetailPage() {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-transparent">
         <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-500 dark:text-gray-400">Maç bulunamadı.</p>
@@ -275,7 +275,7 @@ export default function MatchDetailPage() {
   const sameDayMatches = allMatches.filter(m => m.date === match.date && m.id !== match.id);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-transparent transition-colors">
       <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

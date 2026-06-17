@@ -100,9 +100,9 @@ export default function BracketView() {
         </div>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
-        <p className="text-blue-800 dark:text-blue-200 text-sm">
-          <span className="font-bold">Bilgi:</span> Bu görünüm, grupların şu anki gerçek puan durumuna göre olası Son 32 eşleşmelerini gösterir. Henüz oynanmamış eleme maçlarında takımlar belirlendikçe güncellenir.
+      <div className="bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 border border-purple-500/30 dark:border-purple-500/20 rounded-2xl p-4">
+        <p className="text-purple-900 dark:text-purple-200 text-sm">
+          🏟️ <span className="font-bold">Turnuva Rehberi:</span> Bu görünüm, grupların şu anki gerçek puan durumuna göre olası Son 32 eşleşmelerini gösterir. Henüz oynanmamış eleme maçlarında takımlar belirlendikçe güncellenir.
         </p>
       </div>
 
@@ -111,14 +111,14 @@ export default function BracketView() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 dark:text-gray-400">{completedGroupMatches}/{totalGroupMatches} grup maçı tamamlandı</span>
             <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all" style={{ width: totalGroupMatches > 0 ? `${(completedGroupMatches / totalGroupMatches) * 100}%` : '0%' }} />
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full transition-all" style={{ width: totalGroupMatches > 0 ? `${(completedGroupMatches / totalGroupMatches) * 100}%` : '0%' }} />
             </div>
           </div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{completedKnockout} eleme maçı oynandı</span>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-          <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeRound === 'all' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>Tümü</button>
+          <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeRound === 'all' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>Tümü</button>
           {rounds.map(stage => (
             <button key={stage} onClick={() => setActiveRound(stage)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeRound === stage ? 'bg-gradient-to-r ' + getStageColor(stage) + ' text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>{stageLabels[stage]}</button>
           ))}
@@ -221,11 +221,11 @@ export default function BracketView() {
       )}
 
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === 'all' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+        <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === 'all' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md border-0' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
           Tümü
         </button>
         {rounds.map(r => (
-          <button key={r} onClick={() => setActiveRound(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === r ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+          <button key={r} onClick={() => setActiveRound(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === r ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md border-0' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
             {r}
           </button>
         ))}

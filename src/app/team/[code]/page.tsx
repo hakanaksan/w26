@@ -106,7 +106,7 @@ const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
 
   if (code === 'TBD' || !team.flag) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-transparent">
         <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-500 dark:text-gray-400">Takım bulunamadı.</p>
@@ -124,7 +124,7 @@ const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-transparent transition-colors">
       <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -169,7 +169,7 @@ const upcomingMatches = teamMatches.filter(m => !getMatchStatus(m).hasScore);
         <div className="flex gap-2 mb-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/50' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 dark:shadow-emerald-950/40' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
               {tab.label}
             </button>
           ))}

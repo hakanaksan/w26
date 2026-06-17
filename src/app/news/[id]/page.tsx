@@ -64,7 +64,7 @@ export default function NewsDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+      <div className="min-h-screen bg-transparent transition-colors">
         <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-4">
@@ -84,7 +84,7 @@ export default function NewsDetailPage() {
 
   if (!article) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+      <div className="min-h-screen bg-transparent transition-colors">
         <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4">📰</div>
@@ -100,7 +100,7 @@ export default function NewsDetailPage() {
   const displayContent = hasContent ? article.content : article.description;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-transparent transition-colors">
       <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors">

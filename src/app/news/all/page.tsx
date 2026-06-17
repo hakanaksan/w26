@@ -44,12 +44,12 @@ export default function AllNewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-transparent transition-colors">
       <Header activeTab="fixtures" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-2xl">📰</div>
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-center text-2xl">📰</div>
           <div>
             <h2 className="text-2xl font-black text-gray-900 dark:text-white">Dünya Kupası Haberleri</h2>
             <p className="text-gray-500 dark:text-gray-400">2026 FIFA Dünya Kupası ile ilgili en güncel haberler</p>

@@ -336,9 +336,9 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-500 dark:text-gray-400">Yükleniyor...</p>
         </div>
       </div>
@@ -346,17 +346,17 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-transparent transition-colors">
       <Header activeTab={activeTab} onTabChange={handleTabChange} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'fixtures' && (
           <div className="space-y-8">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 dark:shadow-blue-900/50">
+            <div className="wc-hero rounded-3xl p-8 text-white shadow-xl shadow-emerald-500/10 dark:shadow-purple-500/10">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div>
-                  <h2 className="text-3xl font-black mb-2">2026 FIFA Dünya Kupası</h2>
-                  <p className="text-blue-100 text-lg">11 Haziran - 19 Temmuz 2026</p>
+                  <h2 className="text-3xl font-black mb-2 tracking-tight">2026 FIFA Dünya Kupası</h2>
+                  <p className="text-white/80 text-lg font-medium">11 Haziran - 19 Temmuz 2026</p>
                   <div className="flex items-center gap-2 mt-2">
                     {isApiConfigured ? (
                       <button onClick={() => refreshLiveScores(selectedDate)} disabled={liveLoading} className="flex items-center gap-1.5 text-xs bg-emerald-400/20 text-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-400/30 transition-colors disabled:opacity-50">
@@ -370,29 +370,29 @@ export default function Home() {
                         Manuel mod
                       </span>
                     )}
-                    {liveLoading && <span className="text-xs text-blue-200 animate-pulse">Güncelleniyor...</span>}
+                    {liveLoading && <span className="text-xs text-emerald-200 animate-pulse">Güncelleniyor...</span>}
                   </div>
                 </div>
                 <div className="flex gap-3 flex-wrap">
                   <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
+                    <p className="text-2xl font-black text-amber-300">🏆</p>
+                    <p className="text-white/70 text-[11px] mt-1 font-semibold">Trophy</p>
+                  </div>
+                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
                     <p className="text-2xl font-black">{stats.totalMatches}</p>
-                    <p className="text-blue-200 text-[11px]">Toplam Maç</p>
+                    <p className="text-white/70 text-[11px] mt-1">Toplam Maç</p>
                   </div>
                   <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
-                    <p className="text-2xl font-black">{stats.completedMatches}</p>
-                    <p className="text-blue-200 text-[11px]">Biten</p>
+                    <p className="text-2xl font-black text-emerald-300">{stats.completedMatches}</p>
+                    <p className="text-white/70 text-[11px] mt-1">Biten</p>
                   </div>
                   <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
-                    <p className="text-2xl font-black">{stats.totalGoals}</p>
-                    <p className="text-blue-200 text-[11px]">Gol</p>
+                    <p className="text-2xl font-black text-teal-300">{stats.totalGoals}</p>
+                    <p className="text-white/70 text-[11px] mt-1">Gol</p>
                   </div>
                   <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
-                    <p className="text-2xl font-black">{stats.completedMatches > 0 ? (stats.totalGoals / stats.completedMatches).toFixed(1) : '-'}</p>
-                    <p className="text-blue-200 text-[11px]">Gol/Maç</p>
-                  </div>
-                  <div className="text-center bg-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm min-w-[80px]">
-                    <p className="text-2xl font-black">{stats.predictionsCount}</p>
-                    <p className="text-blue-200 text-[11px]">Tahmin</p>
+                    <p className="text-2xl font-black text-indigo-300">{stats.predictionsCount}</p>
+                    <p className="text-white/70 text-[11px] mt-1">Tahmin</p>
                   </div>
                 </div>
               </div>
@@ -856,7 +856,7 @@ export default function Home() {
               <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 pb-4 border-b border-gray-100 dark:border-gray-700 rounded-t-3xl z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
                       {userDetail.user.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -864,9 +864,9 @@ export default function Home() {
                       <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                         <span>{userDetail.stats.total} tahmin</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">{userDetail.stats.exact} tam</span>
-                        <span className="text-blue-600 dark:text-blue-400">{userDetail.stats.outcome} sonuç</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">{userDetail.stats.outcome} sonuç</span>
                         <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.goalCount} gol</span>
-                        <span className="font-bold text-blue-600 dark:text-blue-400">{userDetail.stats.points} puan</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{userDetail.stats.points} puan</span>
                       </div>
                     </div>
                   </div>

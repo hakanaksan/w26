@@ -141,8 +141,8 @@ export default function BracketPredictor() {
       </div>
 
       {!user && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 text-center">
-          <p className="text-blue-700 dark:text-blue-300 font-medium">Tahmin girmek için <a href="/auth/login" className="underline font-bold">giriş yapın</a></p>
+        <div className="bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 border border-purple-500/30 dark:border-purple-500/20 rounded-2xl p-4 text-center">
+          <p className="text-purple-900 dark:text-purple-200 font-medium">Tahmin girmek için <a href="/auth/login" className="text-emerald-500 hover:text-emerald-400 font-bold underline transition-colors">giriş yapın</a></p>
         </div>
       )}
 
@@ -249,11 +249,11 @@ export default function BracketPredictor() {
 
       {/* Round filter */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === 'all' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-          Tumu
+        <button onClick={() => setActiveRound('all')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === 'all' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md border-0' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
+          Tümü
         </button>
         {rounds.map(r => (
-          <button key={r} onClick={() => setActiveRound(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === r ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+          <button key={r} onClick={() => setActiveRound(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeRound === r ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md border-0' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'}`}>
             {r}
           </button>
         ))}
