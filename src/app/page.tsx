@@ -8,7 +8,7 @@ import MatchCard, { MiniMatchCard } from '@/components/MatchCard';
 import GroupStandings from '@/components/GroupStandings';
 import NotificationsList from '@/components/NotificationsList';
 import NotificationModal from '@/components/NotificationModal';
-import NewsSection from '@/components/NewsSection';
+// Removed NewsSection import
 import ScorerEntryForm from '@/components/ScorerEntryForm';
 import SharePredictionCard from '@/components/SharePredictionCard';
 import BracketView from '@/components/BracketView';
@@ -58,6 +58,79 @@ export default function Home() {
   const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; outcome: number; goalCount: number; missed: number; points: number } } | null>(null);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
+
+  const [targetMatchDetails, setTargetMatchDetails] = useState<any>(null);
+  const [targetMatchEvents, setTargetMatchEvents] = useState<any[]>([]);
+  const [isTargetLoading, setIsTargetLoading] = useState(false);
+
+  const liveMatch = matches.find(m => getMatchStatus(m).isLive);
+  const lastCompletedMatch = matches
+    .filter(m => getMatchStatus(m).isCompleted)
+    .sort((a, b) => {
+      const dateTimeA = new Date(`${a.date}T${a.time}:00`).getTime();
+      const dateTimeB = new Date(`${b.date}T${b.time}:00`).getTime();
+      return dateTimeB - dateTimeA;
+    })[0];
+
+  const targetMatch = liveMatch || lastCompletedMatch;
+
+  useEffect(() => {
+    if (!targetMatch) return;
+    
+    let isMounted = true;
+    setIsTargetLoading(true);
+    
+    const fetchTargetDetails = async () => {
+      try {
+        const res = await fetch(`/api/live-scores?date=${targetMatch.date}`);
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          const apiMatch = (data.matches || []).find((m: any) => 
+            m.homeCode === targetMatch.homeTeamId && m.awayCode === targetMatch.awayTeamId
+          );
+          if (apiMatch) {
+            setTargetMatchDetails(apiMatch);
+            setTargetMatchEvents(apiMatch.goals || []);
+          } else {
+            const scorersRes = await fetch('/api/scorers');
+            if (scorersRes.ok && isMounted) {
+              const scorersData = await scorersRes.json();
+              const dbGoals = (scorersData.scorers || [])
+                .filter((s: any) => s.matchId === targetMatch.id)
+                .map((s: any) => ({
+                  minute: s.minute,
+                  playerName: s.playerName,
+                  teamCode: s.teamId,
+                  isPenalty: s.isPenalty === 1,
+                  isOwnGoal: s.isOwnGoal === 1,
+                  eventType: 'goal'
+                }));
+              setTargetMatchEvents(dbGoals);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setIsTargetLoading(false);
+      }
+    };
+    
+    fetchTargetDetails();
+    
+    let interval: NodeJS.Timeout;
+    if (targetMatch && !targetMatch.isCompleted) {
+      interval = setInterval(fetchTargetDetails, 30000);
+    }
+    
+    return () => {
+      isMounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [targetMatch?.id, targetMatch?.isCompleted, targetMatch?.date]);
+
+  const homeTeam = targetMatch ? getTeam(targetMatch.homeTeamId) : null;
+  const awayTeam = targetMatch ? getTeam(targetMatch.awayTeamId) : null;
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -356,7 +429,135 @@ export default function Home() {
                 )}
               </div>
 
-              <NewsSection />
+              {targetMatch && homeTeam && awayTeam ? (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                  <div>
+                    {/* Card Header */}
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        {getMatchStatus(targetMatch).isLive ? (
+                          <>
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                            </span>
+                            <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Canlı</span>
+                            {targetMatchDetails?.minute && (
+                              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                {targetMatchDetails.minute}'
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg">🏁</span>
+                            <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Son Oynanan Maç</span>
+                          </>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+                        {targetMatch.stage}
+                      </span>
+                    </div>
+
+                    {/* Teams and Score */}
+                    <div className="flex items-center justify-between gap-4 py-2 mb-6">
+                      <div className="flex flex-col items-center gap-2 flex-1 text-center">
+                        <img 
+                          src={homeTeam.flag || getFlagUrl(targetMatch.homeTeamId)} 
+                          alt={homeTeam.name} 
+                          className="w-12 h-8 rounded shadow-sm object-cover" 
+                        />
+                        <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[80px]">
+                          {homeTeam.name}
+                        </span>
+                      </div>
+
+                      <div className="text-center">
+                        <span className="text-3xl font-black text-gray-900 dark:text-white px-2">
+                          {targetMatchDetails?.homeScore ?? targetMatch.homeScore ?? 0}
+                        </span>
+                        <span className="text-gray-400 dark:text-gray-600 font-bold">:</span>
+                        <span className="text-3xl font-black text-gray-900 dark:text-white px-2">
+                          {targetMatchDetails?.awayScore ?? targetMatch.awayScore ?? 0}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-center gap-2 flex-1 text-center">
+                        <img 
+                          src={awayTeam.flag || getFlagUrl(targetMatch.awayTeamId)} 
+                          alt={awayTeam.name} 
+                          className="w-12 h-8 rounded shadow-sm object-cover" 
+                        />
+                        <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[80px]">
+                          {awayTeam.name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Timeline Events */}
+                    <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 mb-6">
+                      {isTargetLoading ? (
+                        <div className="space-y-2 py-4">
+                          <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
+                        </div>
+                      ) : targetMatchEvents.length === 0 ? (
+                        <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-xs">
+                          Maçta gol veya kart kaydı bulunmuyor
+                        </div>
+                      ) : (
+                        [...targetMatchEvents]
+                          .sort((a, b) => (a.minute || 90) - (b.minute || 90))
+                          .map((event, index) => {
+                            const isGoal = event.eventType === 'goal' || (!event.eventType && !event.isOwnGoal);
+                            const isYellow = event.isYellowCard || event.eventType === 'yellowCard';
+                            const isRed = event.isRedCard || event.eventType === 'redCard';
+                            const eventTeam = getTeam(event.teamCode);
+
+                            return (
+                              <div key={index} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-gray-400 dark:text-gray-500 font-semibold min-w-[20px]">
+                                    {event.minute ? `${event.minute}'` : '-'}
+                                  </span>
+                                  {isGoal && <span className="text-emerald-500">⚽</span>}
+                                  {isYellow && <span className="text-amber-500">🟨</span>}
+                                  {isRed && <span className="text-red-500">🟥</span>}
+                                  <span className="text-gray-800 dark:text-gray-200 font-medium truncate max-w-[120px]">
+                                    {event.playerName}
+                                    {event.isOwnGoal && <span className="text-red-500 text-[10px] ml-1">(K.K.)</span>}
+                                    {event.isPenalty && <span className="text-amber-600 dark:text-amber-400 text-[10px] ml-1">(Pen)</span>}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <img src={eventTeam.flag} alt="" className="w-3.5 h-2.5 rounded-sm object-cover" />
+                                  <span className="text-[10px] text-gray-500 dark:text-gray-400">{eventTeam.name}</span>
+                                </div>
+                              </div>
+                            );
+                          })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <a 
+                    href={`/match/${targetMatch.id}`} 
+                    className="w-full text-center py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                  >
+                    Maç Detayına Git
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm text-center py-12 text-gray-400 dark:text-gray-500">
+                  <p className="text-4xl mb-2">⚽</p>
+                  <p className="text-sm">Aktif veya oynanmış maç bulunamadı</p>
+                </div>
+              )}
             </div>
 
             {nextUpcoming.length > 0 && upcoming24h.length === 0 && (
