@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { matches as scheduledMatches } from '@/data/fixtures';
 
 const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY || '';
 const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
@@ -7,18 +8,18 @@ const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.wor
 const THESPORTSDB_KEY = '3';
 
 const FD_TEAM_MAP: Record<string, string> = {
-  'Mexico': 'MEX', 'South Africa': 'RSA', 'South Korea': 'KOR', 'Czech Republic': 'CZE',
+  'Mexico': 'MEX', 'South Africa': 'RSA', 'South Korea': 'KOR', 'Korea Republic': 'KOR', 'Czech Republic': 'CZE', 'Czechia': 'CZE',
   'Canada': 'CAN', 'Bosnia and Herzegovina': 'BIH', 'Qatar': 'QAT', 'Switzerland': 'SUI',
   'Brazil': 'BRA', 'Morocco': 'MAR', 'Haiti': 'HAI', 'Scotland': 'SCO',
-  'USA': 'USA', 'United States': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'Turkey': 'TUR',
-  'Germany': 'GER', 'Curacao': 'CUW', "Côte d'Ivoire": 'CIV', 'Ivory Coast': 'CIV',
+  'USA': 'USA', 'United States': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'Turkey': 'TUR', 'Türkiye': 'TUR', 'Turkiye': 'TUR',
+  'Germany': 'GER', 'Curacao': 'CUW', 'Curaçao': 'CUW', "Côte d'Ivoire": 'CIV', "Cote d'Ivoire": 'CIV', 'Ivory Coast': 'CIV',
   'Ecuador': 'ECU', 'Netherlands': 'NED', 'Japan': 'JPN', 'Sweden': 'SWE', 'Tunisia': 'TUN',
-  'Belgium': 'BEL', 'Egypt': 'EGY', 'Iran': 'IRN', 'New Zealand': 'NZL',
-  'Spain': 'ESP', 'Cape Verde': 'CPV', 'Cape Verde Islands': 'CPV',
+  'Belgium': 'BEL', 'Egypt': 'EGY', 'Iran': 'IRN', 'IR Iran': 'IRN', 'New Zealand': 'NZL',
+  'Spain': 'ESP', 'Cape Verde': 'CPV', 'Cape Verde Islands': 'CPV', 'Cabo Verde': 'CPV',
   'Saudi Arabia': 'KSA', 'Uruguay': 'URU',
   'France': 'FRA', 'Senegal': 'SEN', 'Iraq': 'IRQ', 'Norway': 'NOR',
   'Argentina': 'ARG', 'Algeria': 'ALG', 'Austria': 'AUT', 'Jordan': 'JOR',
-  'Portugal': 'POR', 'DR Congo': 'COD', 'Congo DR': 'COD',
+  'Portugal': 'POR', 'DR Congo': 'COD', 'Congo DR': 'COD', 'Democratic Republic of the Congo': 'COD',
   'Uzbekistan': 'UZB', 'Colombia': 'COL',
   'England': 'ENG', 'Croatia': 'CRO', 'Ghana': 'GHA', 'Panama': 'PAN',
 };
@@ -39,7 +40,22 @@ const ESPN_TEAM_MAP: Record<string, string> = {
   'ENG': 'ENG', 'CRO': 'CRO', 'GHA': 'GHA', 'PAN': 'PAN',
 };
 
-const AF_TEAM_MAP: Record<string, string> = { ...FD_TEAM_MAP, "Cote d'Ivoire": 'CIV' };
+const AF_TEAM_MAP: Record<string, string> = { ...FD_TEAM_MAP };
+
+function mapTeamName(name: string): string {
+  if (!name) return '';
+  const cleanName = name.trim().toLowerCase();
+  
+  if (FD_TEAM_MAP[name]) return FD_TEAM_MAP[name];
+  
+  for (const [key, code] of Object.entries(FD_TEAM_MAP)) {
+    const cleanKey = key.toLowerCase();
+    if (cleanKey === cleanName || cleanName.includes(cleanKey) || cleanKey.includes(cleanName)) {
+      return code;
+    }
+  }
+  return '';
+}
 
 interface GoalEvent {
   minute: number | null;
@@ -98,17 +114,21 @@ function parseStatus(raw: string, source: string): { isCompleted: boolean; isLiv
 function mapEspnTeamCode(abbrev: string, name: string): string {
   if (abbrev && ESPN_TEAM_MAP[abbrev]) return ESPN_TEAM_MAP[abbrev];
   if (name) {
-    for (const [key, code] of Object.entries(FD_TEAM_MAP)) {
-      if (name.toLowerCase().includes(key.toLowerCase())) return code;
-    }
+    const mapped = mapTeamName(name);
+    if (mapped) return mapped;
   }
   return abbrev || '';
 }
 
 async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok: boolean }> {
   try {
-    const espnDate = dateStr.replace(/-/g, '');
-    const url = `${ESPN_BASE}/scoreboard?dates=${espnDate}`;
+    const currentDate = new Date(dateStr + 'T00:00:00Z');
+    const prevDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+    const nextDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    const prevStr = prevDate.toISOString().split('T')[0].replace(/-/g, '');
+    const nextStr = nextDate.toISOString().split('T')[0].replace(/-/g, '');
+    
+    const url = `${ESPN_BASE}/scoreboard?dates=${prevStr}-${nextStr}`;
     const response = await fetch(url, { next: { revalidate: 30 } });
     if (!response.ok) return { matches: [], ok: false };
 
@@ -217,8 +237,8 @@ async function fetchTheSportsDB(dateStr: string): Promise<{ matches: MatchResult
     const matches: MatchResult[] = events.map((ev: any) => {
       const homeTeam = ev.strHomeTeam || '';
       const awayTeam = ev.strAwayTeam || '';
-      const homeCode = FD_TEAM_MAP[homeTeam] || '';
-      const awayCode = FD_TEAM_MAP[awayTeam] || '';
+      const homeCode = mapTeamName(homeTeam);
+      const awayCode = mapTeamName(awayTeam);
       const rawStatus = ev.strStatus || ev.intProgress || '';
       const status = parseStatus(rawStatus, 'thesportsdb');
 
@@ -276,8 +296,8 @@ async function fetchFootballDataOrg(date: string): Promise<{ matches: MatchResul
     const matches: MatchResult[] = (json.matches || [])
       .filter((m: any) => m.competition?.id === 2000)
       .map((m: any) => {
-        const homeCode = FD_TEAM_MAP[m.homeTeam?.name] || m.homeTeam?.tla || '';
-        const awayCode = FD_TEAM_MAP[m.awayTeam?.name] || m.awayTeam?.tla || '';
+        const homeCode = mapTeamName(m.homeTeam?.name) || m.homeTeam?.tla || '';
+        const awayCode = mapTeamName(m.awayTeam?.name) || m.awayTeam?.tla || '';
         const status = parseStatus(m.status, 'football-data');
         return {
           id: `fd_${m.id}`,
@@ -320,8 +340,8 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
 
     const json = await response.json();
     const matches: MatchResult[] = (json.response || []).map((f: any) => {
-      const homeCode = AF_TEAM_MAP[f.teams?.home?.name] || '';
-      const awayCode = AF_TEAM_MAP[f.teams?.away?.name] || '';
+      const homeCode = mapTeamName(f.teams?.home?.name);
+      const awayCode = mapTeamName(f.teams?.away?.name);
       const status = parseStatus(f.fixture?.status?.short, 'api-football');
       const goals: GoalEvent[] = (f.events || [])
         .filter((e: any) => e.type === 'Goal')
@@ -329,7 +349,7 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
           minute: e.time?.elapsed ?? null,
           playerName: e.player?.name || '',
           teamName: e.team?.name || '',
-          teamCode: AF_TEAM_MAP[e.team?.name] || '',
+          teamCode: mapTeamName(e.team?.name) || '',
           isPenalty: e.detail === 'Penalty',
           isOwnGoal: e.detail === 'Own Goal',
         }));
@@ -361,6 +381,42 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
   }
 }
 
+function alignMatchDates(fetchedMatches: MatchResult[]): MatchResult[] {
+  return fetchedMatches.map(fm => {
+    const scheduled = scheduledMatches.find(sm => {
+      const isSameTeams = (sm.homeTeamId === fm.homeCode && sm.awayTeamId === fm.awayCode) ||
+                          (sm.homeTeamId === fm.awayCode && sm.awayTeamId === fm.homeCode);
+      if (!isSameTeams) return false;
+
+      const scheduledDateVal = new Date(sm.date + 'T00:00:00Z').getTime();
+      const fetchedDateVal = new Date(fm.date + 'T00:00:00Z').getTime();
+      const diffDays = Math.abs(scheduledDateVal - fetchedDateVal) / (24 * 60 * 60 * 1000);
+      return diffDays <= 3;
+    });
+
+    if (scheduled) {
+      const isSwapped = scheduled.homeTeamId === fm.awayCode && scheduled.awayTeamId === fm.homeCode;
+      return {
+        ...fm,
+        date: scheduled.date,
+        homeCode: scheduled.homeTeamId,
+        awayCode: scheduled.awayTeamId,
+        homeScore: isSwapped ? fm.awayScore : fm.homeScore,
+        awayScore: isSwapped ? fm.homeScore : fm.awayScore,
+        goals: (fm.goals || []).map(g => {
+          const isHomeGoal = g.teamCode === fm.homeCode;
+          return {
+            ...g,
+            teamCode: isHomeGoal ? (isSwapped ? scheduled.awayTeamId : scheduled.homeTeamId) : (isSwapped ? scheduled.homeTeamId : scheduled.awayTeamId)
+          };
+        })
+      };
+    }
+
+    return fm;
+  });
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
@@ -376,7 +432,7 @@ export async function GET(request: Request) {
   // 1. Try ESPN first (free, no auth, live data with goals)
   const espnResult = await fetchESPN(date);
   if (espnResult.ok) {
-    matches = espnResult.matches;
+    matches = alignMatchDates(espnResult.matches).filter(m => m.date === date);
     source = 'espn';
   }
 
@@ -384,7 +440,7 @@ export async function GET(request: Request) {
   if (matches.length === 0) {
     const tsdbResult = await fetchTheSportsDB(date);
     if (tsdbResult.ok) {
-      matches = tsdbResult.matches;
+      matches = alignMatchDates(tsdbResult.matches).filter(m => m.date === date);
       source = 'thesportsdb';
     }
   }
@@ -393,7 +449,7 @@ export async function GET(request: Request) {
   if (matches.length === 0) {
     const fdResult = await fetchFootballDataOrg(date);
     if (fdResult.matches.length > 0) {
-      matches = fdResult.matches;
+      matches = alignMatchDates(fdResult.matches).filter(m => m.date === date);
       source = 'football-data';
     } else if (!fdResult.fallback) {
       source = 'football-data';
@@ -404,7 +460,7 @@ export async function GET(request: Request) {
   if (matches.length === 0 && API_FOOTBALL_KEY) {
     const afResult = await fetchApiFootball(date);
     if (afResult.matches.length > 0) {
-      matches = afResult.matches;
+      matches = alignMatchDates(afResult.matches).filter(m => m.date === date);
       source = 'api-football';
     }
   }

@@ -62,6 +62,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    refreshLiveScores(selectedDate);
+  }, [selectedDate, refreshLiveScores]);
+
+  useEffect(() => {
     if (!token) return;
     const fetchPredictions = async () => {
       try {
@@ -256,7 +260,7 @@ export default function Home() {
                   <p className="text-blue-100 text-lg">11 Haziran - 19 Temmuz 2026</p>
                   <div className="flex items-center gap-2 mt-2">
                     {isApiConfigured ? (
-                      <button onClick={refreshLiveScores} disabled={liveLoading} className="flex items-center gap-1.5 text-xs bg-emerald-400/20 text-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-400/30 transition-colors disabled:opacity-50">
+                      <button onClick={() => refreshLiveScores(selectedDate)} disabled={liveLoading} className="flex items-center gap-1.5 text-xs bg-emerald-400/20 text-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-400/30 transition-colors disabled:opacity-50">
                         <span className="w-2 h-2 bg-emerald-400 rounded-full" />
                         Skorları Güncelle
                         {lastUpdated && <span className="opacity-70">• {new Date(lastUpdated).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}

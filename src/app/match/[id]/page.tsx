@@ -54,10 +54,10 @@ export default function MatchDetailPage() {
           }));
         }
       } catch {}
-      await refreshLiveScores();
+      await refreshLiveScores(match?.date);
     };
     loadData();
-  }, [matchId, refreshLiveScores]);
+  }, [matchId, match?.date, refreshLiveScores]);
 
   useEffect(() => {
     if (!token) return;
@@ -287,7 +287,7 @@ export default function MatchDetailPage() {
         {isApiConfigured && (
           <div className="flex justify-end mb-4">
             <button
-              onClick={refreshLiveScores}
+              onClick={() => refreshLiveScores(match?.date)}
               disabled={liveLoading}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-medium hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30"
             >

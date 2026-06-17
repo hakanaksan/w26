@@ -40,7 +40,7 @@ interface LiveScoresResult {
   error: string | null;
   lastUpdated: string | null;
   isApiConfigured: boolean;
-  refresh: () => Promise<void>;
+  refresh: (customDate?: string) => Promise<void>;
 }
 
 function matchApiToLocal(localMatch: Match, apiMatches: LiveScoreMatch[]): { homeScore: number | null; awayScore: number | null; isCompleted: boolean; isLive: boolean } | null {
@@ -69,13 +69,14 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
   const matchesRef = useRef(matches);
   matchesRef.current = matches;
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (customDate?: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(`/api/live-scores?date=${today}`);
+      const defaultDate = new Date().toLocaleDateString('sv-SE');
+      const dateToFetch = customDate || defaultDate;
+      const response = await fetch(`/api/live-scores?date=${dateToFetch}`);
       const data = await response.json();
 
       if (data.source === 'manual') {
