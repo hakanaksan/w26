@@ -30,6 +30,18 @@ export default function MatchDetailPage() {
   const [eventIsOwnGoal, setEventIsOwnGoal] = useState(false);
   const savedGoalKeys = useRef(new Set<string>());
 
+  const [userPredictions, setUserPredictions] = useState<{ userId: string; userName: string; homeScore: number; awayScore: number; points: number; hasPoints: boolean }[]>([]);
+
+  const loadUserPredictions = async () => {
+    try {
+      const res = await fetch(`/api/predictions?matchId=${matchId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserPredictions(data.predictions || []);
+      }
+    } catch {}
+  };
+
   const { mergedMatches: matches, liveMatches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
   const liveMatch = matches.find(m => m.id === matchId);
 
@@ -55,6 +67,7 @@ export default function MatchDetailPage() {
         }
       } catch {}
       await refreshLiveScores(match?.date);
+      loadUserPredictions();
     };
     loadData();
   }, [matchId, match?.date, refreshLiveScores]);
@@ -169,7 +182,10 @@ export default function MatchDetailPage() {
     setPrediction({ homeScore: h, awayScore: a });
     setIsEditingPred(false);
     if (token) {
-      try { await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, homeScore: h, awayScore: a }) }); } catch {}
+      try {
+        await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, homeScore: h, awayScore: a }) });
+        loadUserPredictions();
+      } catch {}
     }
   };
 
@@ -178,7 +194,10 @@ export default function MatchDetailPage() {
     setHomePred('');
     setAwayPred('');
     if (token) {
-      try { await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) });
+        loadUserPredictions();
+      } catch {}
     }
   };
 
@@ -258,6 +277,7 @@ export default function MatchDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchId, homeScore: h, awayScore: a, isCompleted: scoreCompleted }),
       });
+      loadUserPredictions();
     } catch {}
   };
 
@@ -269,6 +289,7 @@ export default function MatchDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchId }),
       });
+      loadUserPredictions();
     } catch {}
   };
 
@@ -517,6 +538,69 @@ export default function MatchDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Kullanıcı Tahminleri */}
+        <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+          <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="text-xl">🎯</span>
+            Kullanıcı Tahminleri
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full ml-1">
+              {userPredictions.length} Tahmin
+            </span>
+          </h3>
+
+          {userPredictions.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Bu maç için henüz tahmin girilmemiş.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {userPredictions.map((pred, idx) => {
+                const isCurrentUser = pred.userId === user?.id;
+                return (
+                  <div
+                    key={pred.userId || idx}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                      isCurrentUser
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-500/50 dark:border-emerald-500/30 shadow-sm shadow-emerald-500/5'
+                        : 'bg-gray-50/50 dark:bg-gray-700/30 border-gray-100 dark:border-gray-700/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                        isCurrentUser
+                          ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}>
+                        {pred.userName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-sm font-semibold truncate ${
+                        isCurrentUser ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-900 dark:text-white'
+                      }`}>
+                        {pred.userName}
+                        {isCurrentUser && <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-medium ml-1">Sen</span>}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-gray-900 dark:text-white text-base">
+                        {pred.homeScore} - {pred.awayScore}
+                      </span>
+                      {pred.hasPoints && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          pred.points === 3 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' :
+                          pred.points === 2 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' :
+                          pred.points === 1 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' :
+                          'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          +{pred.points} P
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {hasScore && user && (
           <div className="mt-4">

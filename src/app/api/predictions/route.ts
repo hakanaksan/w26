@@ -9,6 +9,73 @@ async function getUser(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const matchId = searchParams.get('matchId');
+
+  if (matchId) {
+    try {
+      const result = await client.execute({
+        sql: `SELECT p.user_id, p.home_score, p.away_score, u.name as user_name 
+              FROM predictions p 
+              JOIN users u ON p.user_id = u.id 
+              WHERE p.match_id = ?`,
+        args: [matchId]
+      });
+
+      const scoreResult = await client.execute({
+        sql: 'SELECT home_score, away_score, is_completed FROM match_scores WHERE match_id = ?',
+        args: [matchId]
+      });
+
+      let score: { home: number; away: number; isCompleted: boolean } | null = null;
+      if (scoreResult.rows.length > 0) {
+        score = {
+          home: scoreResult.rows[0].home_score as number,
+          away: scoreResult.rows[0].away_score as number,
+          isCompleted: scoreResult.rows[0].is_completed === 1
+        };
+      }
+
+      const predictions = result.rows.map(row => {
+        const predHome = row.home_score as number;
+        const predAway = row.away_score as number;
+        let points = 0;
+        let hasPoints = false;
+
+        if (score && score.isCompleted) {
+          hasPoints = true;
+          if (predHome === score.home && predAway === score.away) {
+            points = 3;
+          } else {
+            const predOutcome = predHome > predAway ? 'home' : predHome < predAway ? 'away' : 'draw';
+            const actualOutcome = score.home > score.away ? 'home' : score.home < score.away ? 'away' : 'draw';
+            if (predOutcome === actualOutcome) {
+              points = 2;
+            } else if (predHome === score.home || predAway === score.away) {
+              points = 1;
+            } else {
+              points = 0;
+            }
+          }
+        }
+
+        return {
+          userId: row.user_id as string,
+          userName: row.user_name as string,
+          homeScore: predHome,
+          awayScore: predAway,
+          points,
+          hasPoints
+        };
+      });
+
+      return NextResponse.json({ predictions });
+    } catch (err) {
+      console.error('Predictions match detail error:', err);
+      return NextResponse.json({ predictions: [] });
+    }
+  }
+
   const user = await getUser(request);
   if (!user) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
