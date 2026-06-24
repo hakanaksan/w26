@@ -38,7 +38,7 @@ export function calculateGroupStandings(
     let homeScore: number | undefined;
     let awayScore: number | undefined;
 
-    if (m.isCompleted && m.homeScore !== undefined && m.awayScore !== undefined) {
+    if (m.homeScore !== undefined && m.awayScore !== undefined) {
       homeScore = m.homeScore;
       awayScore = m.awayScore;
     } else if (predictions[m.id]) {

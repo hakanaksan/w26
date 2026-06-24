@@ -23,12 +23,14 @@ interface Standing {
 }
 
 export default function GroupStandings({ selectedGroup, onGroupChange, matches }: GroupStandingsProps) {
+  const hasLiveMatch = matches.some(m => m.group === selectedGroup && !m.isCompleted && m.homeScore !== undefined && m.awayScore !== undefined);
+
   const calculateStandings = (groupId: string): Standing[] => {
     const groupTeamIds = Object.entries(teams)
       .filter(([, team]) => team.groupId === groupId)
       .map(([id]) => id);
 
-    const groupMatches = matches.filter(m => m.group === groupId && m.isCompleted);
+    const groupMatches = matches.filter(m => m.group === groupId && m.homeScore !== undefined && m.awayScore !== undefined);
 
     const standings: Record<string, Standing> = {};
     groupTeamIds.forEach(teamId => {
@@ -122,6 +124,15 @@ export default function GroupStandings({ selectedGroup, onGroupChange, matches }
       </div>
       <div className="mt-4 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800" /> <span>Son 32'ye yükselir</span></div>
+        {hasLiveMatch && (
+          <div className="flex items-center gap-2">
+            <span className="relative flex w-2.5 h-2.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+            </span>
+            <span className="text-red-600 dark:text-red-400 font-medium">Canlı maç sonuçları puan tablosuna yansıyor</span>
+          </div>
+        )}
       </div>
     </div>
   );
