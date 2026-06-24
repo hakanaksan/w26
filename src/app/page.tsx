@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Header from '@/components/Header';
 import DaySelector from '@/components/DaySelector';
@@ -51,7 +52,17 @@ export default function Home() {
     }
     return '2026-06-11';
   });
-  const [selectedGroup, setSelectedGroup] = useState('A');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialGroup = searchParams.get('group') || 'A';
+  const [selectedGroup, setSelectedGroupState] = useState(initialGroup);
+  const setSelectedGroup = useCallback((group: string) => {
+    setSelectedGroupState(group);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('group', group);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [router, pathname, searchParams]);
   const [localMatches, setLocalMatches] = useState(allMatches);
   const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
