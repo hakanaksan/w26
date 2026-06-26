@@ -1,5 +1,6 @@
 import { matches as allMatches, Match } from './fixtures';
 import { teams as allTeams, getTeam } from './teams';
+import combinationsData from './combinations.json';
 
 export interface GroupStanding {
   code: string;
@@ -69,7 +70,10 @@ export function calculateGroupStandings(
   }
 
   for (const gid of Object.keys(groups)) {
-    groups[gid].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+    for (const team of groups[gid]) {
+      team.gd = team.gf - team.ga;
+    }
+    groups[gid].sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
   }
 
   return groups;
@@ -172,8 +176,22 @@ export function resolveBracket(
   allThird.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
 
   const thirdPlaceMap: Record<string, string> = {};
-  for (let i = 0; i < 8 && i < allThird.length; i++) {
-    thirdPlaceMap[`3RD_${i + 1}`] = allThird[i].code;
+  const qualifiedGroups = allThird.slice(0, 8).map(t => t.group).sort().join('');
+  const mapping = (combinationsData as Record<string, Record<string, string>>)[qualifiedGroups];
+
+  if (mapping) {
+    thirdPlaceMap['3RD_1'] = standings[mapping['1E']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_2'] = standings[mapping['1I']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_3'] = standings[mapping['1A']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_4'] = standings[mapping['1L']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_5'] = standings[mapping['1D']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_6'] = standings[mapping['1G']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_7'] = standings[mapping['1B']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_8'] = standings[mapping['1K']]?.[2]?.code || 'TBD';
+  } else {
+    for (let i = 0; i < 8 && i < allThird.length; i++) {
+      thirdPlaceMap[`3RD_${i + 1}`] = allThird[i].code;
+    }
   }
 
   const resolvePosition = (pos: string): string => {
@@ -328,8 +346,22 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
   allThird.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
 
   const thirdPlaceMap: Record<string, string> = {};
-  for (let i = 0; i < 8 && i < allThird.length; i++) {
-    thirdPlaceMap[`3RD_${i + 1}`] = allThird[i].code;
+  const qualifiedGroups = allThird.slice(0, 8).map(t => t.group).sort().join('');
+  const mapping = (combinationsData as Record<string, Record<string, string>>)[qualifiedGroups];
+
+  if (mapping) {
+    thirdPlaceMap['3RD_1'] = standings[mapping['1E']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_2'] = standings[mapping['1I']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_3'] = standings[mapping['1A']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_4'] = standings[mapping['1L']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_5'] = standings[mapping['1D']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_6'] = standings[mapping['1G']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_7'] = standings[mapping['1B']]?.[2]?.code || 'TBD';
+    thirdPlaceMap['3RD_8'] = standings[mapping['1K']]?.[2]?.code || 'TBD';
+  } else {
+    for (let i = 0; i < 8 && i < allThird.length; i++) {
+      thirdPlaceMap[`3RD_${i + 1}`] = allThird[i].code;
+    }
   }
 
   const resolvePosition = (pos: string): string => {

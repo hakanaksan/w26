@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { matches as scheduledMatches } from '@/data/fixtures';
+import { resolveRealBracket } from '@/data/bracket';
+import { client } from '@/lib/db-client';
 
 const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY || '';
 const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
@@ -381,9 +383,17 @@ async function fetchApiFootball(date: string): Promise<{ matches: MatchResult[];
   }
 }
 
-function alignMatchDates(fetchedMatches: MatchResult[]): MatchResult[] {
+function alignMatchDates(fetchedMatches: MatchResult[], resolvedSlots: any[] = []): MatchResult[] {
   return fetchedMatches.map(fm => {
-    const scheduled = scheduledMatches.find(sm => {
+    // 1. Try matching against resolved bracket slots for knockout matches
+    let matchedSlot = resolvedSlots.find(slot => {
+      const isSameTeams = (slot.homeTeamId === fm.homeCode && slot.awayTeamId === fm.awayCode) ||
+                          (slot.homeTeamId === fm.awayCode && slot.awayTeamId === fm.homeCode);
+      return isSameTeams;
+    });
+
+    // 2. If not a knockout match or no slot found, fallback to scheduled group matches
+    const scheduled = matchedSlot ? scheduledMatches.find(sm => sm.id === matchedSlot.matchId) : scheduledMatches.find(sm => {
       const isSameTeams = (sm.homeTeamId === fm.homeCode && sm.awayTeamId === fm.awayCode) ||
                           (sm.homeTeamId === fm.awayCode && sm.awayTeamId === fm.homeCode);
       if (!isSameTeams) return false;
@@ -394,20 +404,22 @@ function alignMatchDates(fetchedMatches: MatchResult[]): MatchResult[] {
       return diffDays <= 3;
     });
 
-    if (scheduled) {
-      const isSwapped = scheduled.homeTeamId === fm.awayCode && scheduled.awayTeamId === fm.homeCode;
+    const targetMatch = matchedSlot ? { id: matchedSlot.matchId, date: scheduled?.date || fm.date, homeTeamId: matchedSlot.homeTeamId, awayTeamId: matchedSlot.awayTeamId } : scheduled;
+
+    if (targetMatch) {
+      const isSwapped = targetMatch.homeTeamId === fm.awayCode && targetMatch.awayTeamId === fm.homeCode;
       return {
         ...fm,
-        date: scheduled.date,
-        homeCode: scheduled.homeTeamId,
-        awayCode: scheduled.awayTeamId,
+        date: targetMatch.date,
+        homeCode: targetMatch.homeTeamId,
+        awayCode: targetMatch.awayTeamId,
         homeScore: isSwapped ? fm.awayScore : fm.homeScore,
         awayScore: isSwapped ? fm.homeScore : fm.awayScore,
         goals: (fm.goals || []).map(g => {
           const isHomeGoal = g.teamCode === fm.homeCode;
           return {
             ...g,
-            teamCode: isHomeGoal ? (isSwapped ? scheduled.awayTeamId : scheduled.homeTeamId) : (isSwapped ? scheduled.homeTeamId : scheduled.awayTeamId)
+            teamCode: isHomeGoal ? (isSwapped ? targetMatch.awayTeamId : targetMatch.homeTeamId) : (isSwapped ? targetMatch.homeTeamId : targetMatch.awayTeamId)
           };
         })
       };
@@ -426,13 +438,43 @@ export async function GET(request: Request) {
     return NextResponse.json(cachedData.data);
   }
 
+  let resolvedSlots: any[] = [];
+  try {
+    const scoresResult = await client.execute('SELECT * FROM match_scores');
+    const scores: Record<string, { homeScore: number; awayScore: number; isCompleted: boolean }> = {};
+    for (const row of scoresResult.rows) {
+      scores[row.match_id as string] = {
+        homeScore: row.home_score as number,
+        awayScore: row.away_score as number,
+        isCompleted: (row.is_completed as number) === 1,
+      };
+    }
+
+    const mergedMatches = scheduledMatches.map(m => {
+      const s = scores[m.id];
+      if (s) {
+        return {
+          ...m,
+          homeScore: s.homeScore,
+          awayScore: s.awayScore,
+          isCompleted: s.isCompleted,
+        };
+      }
+      return m;
+    });
+
+    resolvedSlots = resolveRealBracket(mergedMatches);
+  } catch (err) {
+    console.error('API live-scores getResolvedSlots error:', err);
+  }
+
   let matches: MatchResult[] = [];
   let source = 'none';
 
   // 1. Try ESPN first (free, no auth, live data with goals)
   const espnResult = await fetchESPN(date);
   if (espnResult.ok) {
-    matches = alignMatchDates(espnResult.matches).filter(m => m.date === date);
+    matches = alignMatchDates(espnResult.matches, resolvedSlots).filter(m => m.date === date);
     source = 'espn';
   }
 
@@ -440,7 +482,7 @@ export async function GET(request: Request) {
   if (matches.length === 0) {
     const tsdbResult = await fetchTheSportsDB(date);
     if (tsdbResult.ok) {
-      matches = alignMatchDates(tsdbResult.matches).filter(m => m.date === date);
+      matches = alignMatchDates(tsdbResult.matches, resolvedSlots).filter(m => m.date === date);
       source = 'thesportsdb';
     }
   }
@@ -449,7 +491,7 @@ export async function GET(request: Request) {
   if (matches.length === 0) {
     const fdResult = await fetchFootballDataOrg(date);
     if (fdResult.matches.length > 0) {
-      matches = alignMatchDates(fdResult.matches).filter(m => m.date === date);
+      matches = alignMatchDates(fdResult.matches, resolvedSlots).filter(m => m.date === date);
       source = 'football-data';
     } else if (!fdResult.fallback) {
       source = 'football-data';
@@ -460,7 +502,7 @@ export async function GET(request: Request) {
   if (matches.length === 0 && API_FOOTBALL_KEY) {
     const afResult = await fetchApiFootball(date);
     if (afResult.matches.length > 0) {
-      matches = alignMatchDates(afResult.matches).filter(m => m.date === date);
+      matches = alignMatchDates(afResult.matches, resolvedSlots).filter(m => m.date === date);
       source = 'api-football';
     }
   }
