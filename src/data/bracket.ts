@@ -88,19 +88,20 @@ export interface BracketSlot {
   winner?: string;
 }
 
-// 2026 World Cup Son 32 bracket — verified against Wikipedia 2026 FIFA World Cup
-// Format: 12 group winners + 12 runners-up + 8 best third-placed teams
-// Top seeds (Spain 1H, Argentina 1J, France 1I, England 1L) in opposite bracket halves
+// 2026 World Cup Son 32 bracket — verified against Wikipedia 2026 FIFA World Cup knockout stage
+// Format: 16 matches = 12 group winners + 12 runners-up + 8 best third-placed teams
+// Per Wikipedia: 4 matches runner-up vs runner-up, 4 matches winner vs runner-up, 8 matches winner vs best 3rd
+// 3rd-place assignments are dynamic (495 combinations) — here we use a static best-3rd mapping
 const SON32_SLOTS: { matchId: string; homeSource: string; awaySource: string }[] = [
-  { matchId: 'M073', homeSource: '2A', awaySource: '3RD_1' },
-  { matchId: 'M074', homeSource: '2E', awaySource: '3RD_2' },
+  { matchId: 'M073', homeSource: '2A', awaySource: '2B' },
+  { matchId: 'M074', homeSource: '1E', awaySource: '3RD_1' },
   { matchId: 'M075', homeSource: '1F', awaySource: '2C' },
   { matchId: 'M076', homeSource: '1C', awaySource: '2F' },
-  { matchId: 'M077', homeSource: '1I', awaySource: '3RD_3' },
-  { matchId: 'M078', homeSource: '1E', awaySource: '2I' },
-  { matchId: 'M079', homeSource: '1A', awaySource: '3RD_4' },
-  { matchId: 'M080', homeSource: '1L', awaySource: '3RD_5' },
-  { matchId: 'M081', homeSource: '1D', awaySource: '2B' },
+  { matchId: 'M077', homeSource: '1I', awaySource: '3RD_2' },
+  { matchId: 'M078', homeSource: '2E', awaySource: '2I' },
+  { matchId: 'M079', homeSource: '1A', awaySource: '3RD_3' },
+  { matchId: 'M080', homeSource: '1L', awaySource: '3RD_4' },
+  { matchId: 'M081', homeSource: '1D', awaySource: '3RD_5' },
   { matchId: 'M082', homeSource: '1G', awaySource: '3RD_6' },
   { matchId: 'M083', homeSource: '2K', awaySource: '2L' },
   { matchId: 'M084', homeSource: '1H', awaySource: '2J' },
@@ -110,9 +111,11 @@ const SON32_SLOTS: { matchId: string; homeSource: string; awaySource: string }[]
   { matchId: 'M104', homeSource: '2D', awaySource: '2G' },
 ];
 
-// Son 16 — winners from two Son 32 matches each
-// SF1 path (top half) contains: M073, M074, M075, M077 (M085/M086) + M081, M082, M083, M084 (M089/M090)
-// SF2 path (bottom half) contains: M076, M078, M079, M080 (M087/M088) + M101, M102, M103, M104 (M091/M092)
+// Son 16 — Wikipedia Round of 16 subsections "Winner Match X vs Winner Match Y"
+// Top half (SF1 path): M089 = M83+M84, M090 = M81+M82, M093 = M089+M090
+// Bottom half (SF2 path): M091 = M86+M88, M092 = M85+M87, M095 = M091+M092
+// Top half: M085 = M74+M77, M086 = M73+M75, M094 = M085+M086
+// Bottom half: M087 = M76+M78, M088 = M79+M80, M096 = M087+M088
 const SON16_SLOTS: { matchId: string; homeFrom: string; awayFrom: string }[] = [
   { matchId: 'M085', homeFrom: 'M074', awayFrom: 'M077' },
   { matchId: 'M086', homeFrom: 'M073', awayFrom: 'M075' },
