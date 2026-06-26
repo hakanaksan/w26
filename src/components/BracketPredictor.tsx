@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { matches as allMatches, Match } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
@@ -19,6 +20,20 @@ export default function BracketPredictor() {
   const [activeRound, setActiveRound] = useState<string>('all');
 
   const { mergedMatches: matches } = useLiveScores(localMatches);
+
+  const bestThirds = useMemo(() => {
+    const list: (GroupStanding & { group: string })[] = [];
+    for (const [groupId, teams] of Object.entries(groupStandings)) {
+      const thirdTeam = teams[2];
+      if (thirdTeam) {
+        list.push({
+          ...thirdTeam,
+          group: groupId
+        });
+      }
+    }
+    return list.sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+  }, [groupStandings]);
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -243,6 +258,101 @@ export default function BracketPredictor() {
                 </div>
               );
             })}
+          </div>
+
+          {/* En İyi Üçüncüler Tablosu */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <div className="px-3 py-1 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-600 shadow-sm">
+                  En İyi Üçüncüler Sıralaması (Tahmini)
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Grup üçüncülerinin tahminlere göre karşılaştırılması</span>
+              </div>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg">
+                İlk 8 Takım Son 32'ye Yükselir
+              </span>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 w-12">Sıra</th>
+                      <th className="text-left py-3 px-4">Grup</th>
+                      <th className="text-left py-3 px-4">Takım</th>
+                      <th className="text-center py-3 px-2 w-10">O</th>
+                      <th className="text-center py-3 px-2 w-10">G</th>
+                      <th className="text-center py-3 px-2 w-10">B</th>
+                      <th className="text-center py-3 px-2 w-10">M</th>
+                      <th className="text-center py-3 px-2 w-10">AG</th>
+                      <th className="text-center py-3 px-2 w-10">YG</th>
+                      <th className="text-center py-3 px-2 w-10">AV</th>
+                      <th className="text-center py-3 px-2 w-12 font-bold">Puan</th>
+                      <th className="text-right py-3 px-4">Durum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bestThirds.map((team, idx) => {
+                      const isQualified = idx < 8;
+                      const dbTeam = getTeam(team.code);
+
+                      return (
+                        <tr
+                          key={team.code}
+                          className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-755/50 ${
+                            isQualified ? 'bg-emerald-50/20 dark:bg-emerald-950/5' : ''
+                          }`}
+                        >
+                          <td className="py-2.5 px-4">
+                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                              isQualified
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 font-semibold text-gray-500 dark:text-gray-400">
+                            {team.group}. Grubu
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <Link href={`/team/${team.code}`} className="flex items-center gap-2 group">
+                              <img src={team.flag || getFlagUrl(team.code)} alt={dbTeam.name} className="w-6 h-4 rounded object-cover shadow-sm group-hover:opacity-85 transition-opacity" />
+                              <span className="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
+                                {dbTeam.name}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400 font-medium">{team.played}</td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400">{team.won}</td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400">{team.drawn}</td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400">{team.lost}</td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400">{team.gf}</td>
+                          <td className="text-center py-2.5 px-2 text-gray-600 dark:text-gray-400">{team.ga}</td>
+                          <td className="text-center py-2.5 px-2 font-medium">
+                            <span className={team.gd > 0 ? 'text-emerald-600 dark:text-emerald-400' : team.gd < 0 ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                              {team.gd > 0 ? `+${team.gd}` : team.gd}
+                            </span>
+                          </td>
+                          <td className="text-center py-2.5 px-2 font-bold text-gray-900 dark:text-white">{team.pts}</td>
+                          <td className="py-2.5 px-4 text-right">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isQualified
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                            }`}>
+                              {isQualified ? 'Son 32\'ye Yükseldi' : 'Elendi'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}
