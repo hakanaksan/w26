@@ -88,43 +88,47 @@ export interface BracketSlot {
   winner?: string;
 }
 
-// 2026 World Cup Son 32 bracket — group positions
+// 2026 World Cup Son 32 bracket — verified against Wikipedia 2026 FIFA World Cup
+// Format: 12 group winners + 12 runners-up + 8 best third-placed teams
+// Top seeds (Spain 1H, Argentina 1J, France 1I, England 1L) in opposite bracket halves
 const SON32_SLOTS: { matchId: string; homeSource: string; awaySource: string }[] = [
-  { matchId: 'M073', homeSource: 'A1', awaySource: 'B2' },
-  { matchId: 'M074', homeSource: 'C1', awaySource: 'D2' },
-  { matchId: 'M075', homeSource: 'E1', awaySource: 'F2' },
-  { matchId: 'M076', homeSource: 'G1', awaySource: 'H2' },
-  { matchId: 'M077', homeSource: 'I1', awaySource: 'J2' },
-  { matchId: 'M078', homeSource: 'K1', awaySource: 'L2' },
-  { matchId: 'M079', homeSource: 'B1', awaySource: 'A2' },
-  { matchId: 'M080', homeSource: 'D1', awaySource: 'C2' },
-  { matchId: 'M081', homeSource: 'F1', awaySource: 'E2' },
-  { matchId: 'M082', homeSource: 'H1', awaySource: 'G2' },
-  { matchId: 'M083', homeSource: 'J1', awaySource: 'I2' },
-  { matchId: 'M084', homeSource: 'L1', awaySource: 'K2' },
-  { matchId: 'M101', homeSource: '3RD_1', awaySource: '3RD_8' },
-  { matchId: 'M102', homeSource: '3RD_4', awaySource: '3RD_5' },
-  { matchId: 'M103', homeSource: '3RD_3', awaySource: '3RD_6' },
-  { matchId: 'M104', homeSource: '3RD_2', awaySource: '3RD_7' },
+  { matchId: 'M073', homeSource: '2A', awaySource: '3RD_1' },
+  { matchId: 'M074', homeSource: '2E', awaySource: '3RD_2' },
+  { matchId: 'M075', homeSource: '1F', awaySource: '2C' },
+  { matchId: 'M076', homeSource: '1C', awaySource: '2F' },
+  { matchId: 'M077', homeSource: '1I', awaySource: '3RD_3' },
+  { matchId: 'M078', homeSource: '1E', awaySource: '2I' },
+  { matchId: 'M079', homeSource: '1A', awaySource: '3RD_4' },
+  { matchId: 'M080', homeSource: '1L', awaySource: '3RD_5' },
+  { matchId: 'M081', homeSource: '1D', awaySource: '2B' },
+  { matchId: 'M082', homeSource: '1G', awaySource: '3RD_6' },
+  { matchId: 'M083', homeSource: '2K', awaySource: '2L' },
+  { matchId: 'M084', homeSource: '1H', awaySource: '2J' },
+  { matchId: 'M101', homeSource: '1B', awaySource: '3RD_7' },
+  { matchId: 'M102', homeSource: '1J', awaySource: '2H' },
+  { matchId: 'M103', homeSource: '1K', awaySource: '3RD_8' },
+  { matchId: 'M104', homeSource: '2D', awaySource: '2G' },
 ];
 
 // Son 16 — winners from two Son 32 matches each
+// SF1 path (top half) contains: M073, M074, M075, M077 (M085/M086) + M081, M082, M083, M084 (M089/M090)
+// SF2 path (bottom half) contains: M076, M078, M079, M080 (M087/M088) + M101, M102, M103, M104 (M091/M092)
 const SON16_SLOTS: { matchId: string; homeFrom: string; awayFrom: string }[] = [
-  { matchId: 'M085', homeFrom: 'M073', awayFrom: 'M074' },
-  { matchId: 'M086', homeFrom: 'M075', awayFrom: 'M076' },
-  { matchId: 'M087', homeFrom: 'M077', awayFrom: 'M078' },
+  { matchId: 'M085', homeFrom: 'M074', awayFrom: 'M077' },
+  { matchId: 'M086', homeFrom: 'M073', awayFrom: 'M075' },
+  { matchId: 'M087', homeFrom: 'M076', awayFrom: 'M078' },
   { matchId: 'M088', homeFrom: 'M079', awayFrom: 'M080' },
-  { matchId: 'M089', homeFrom: 'M081', awayFrom: 'M101' },
-  { matchId: 'M090', homeFrom: 'M083', awayFrom: 'M104' },
-  { matchId: 'M091', homeFrom: 'M082', awayFrom: 'M102' },
-  { matchId: 'M092', homeFrom: 'M084', awayFrom: 'M103' },
+  { matchId: 'M089', homeFrom: 'M083', awayFrom: 'M084' },
+  { matchId: 'M090', homeFrom: 'M081', awayFrom: 'M082' },
+  { matchId: 'M091', homeFrom: 'M102', awayFrom: 'M104' },
+  { matchId: 'M092', homeFrom: 'M101', awayFrom: 'M103' },
 ];
 
 const QF_SLOTS: { matchId: string; homeFrom: string; awayFrom: string }[] = [
-  { matchId: 'M093', homeFrom: 'M085', awayFrom: 'M089' },
-  { matchId: 'M094', homeFrom: 'M088', awayFrom: 'M091' },
-  { matchId: 'M095', homeFrom: 'M086', awayFrom: 'M090' },
-  { matchId: 'M096', homeFrom: 'M087', awayFrom: 'M092' },
+  { matchId: 'M093', homeFrom: 'M085', awayFrom: 'M086' },
+  { matchId: 'M094', homeFrom: 'M089', awayFrom: 'M090' },
+  { matchId: 'M095', homeFrom: 'M087', awayFrom: 'M088' },
+  { matchId: 'M096', homeFrom: 'M091', awayFrom: 'M092' },
 ];
 
 const SF_SLOTS: { matchId: string; homeFrom: string; awayFrom: string }[] = [
@@ -149,8 +153,9 @@ export function resolveBracket(
   const winners: Record<string, string> = {};
 
   const groupPosition = (pos: string): string => {
-    const group = pos.charAt(0);
-    const position = parseInt(pos.charAt(1));
+    // format: '1A' (winner) or '2B' (runner-up) — position char first, group letter second
+    const group = pos.charAt(1);
+    const position = parseInt(pos.charAt(0));
     const groupTeams = standings[group];
     if (!groupTeams || !groupTeams[position - 1]) return 'TBD';
     return groupTeams[position - 1].code;
@@ -170,7 +175,7 @@ export function resolveBracket(
 
   const resolvePosition = (pos: string): string => {
     if (pos.startsWith('3RD_')) return thirdPlaceMap[pos] || 'TBD';
-    if (pos.length === 2 && pos[1] >= '1' && pos[1] <= '4') return groupPosition(pos);
+    if (pos.length === 2 && pos[0] >= '1' && pos[0] <= '4') return groupPosition(pos);
     return 'TBD';
   };
 
@@ -305,8 +310,9 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
   const winners: Record<string, string> = {};
 
   const groupPosition = (pos: string): string => {
-    const group = pos.charAt(0);
-    const position = parseInt(pos.charAt(1));
+    // format: '1A' (winner) or '2B' (runner-up) — position char first, group letter second
+    const group = pos.charAt(1);
+    const position = parseInt(pos.charAt(0));
     const groupTeams = standings[group];
     if (!groupTeams || !groupTeams[position - 1]) return 'TBD';
     return groupTeams[position - 1].code;
@@ -325,7 +331,7 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
 
   const resolvePosition = (pos: string): string => {
     if (pos.startsWith('3RD_')) return thirdPlaceMap[pos] || 'TBD';
-    if (pos.length === 2 && pos[1] >= '1' && pos[1] <= '4') return groupPosition(pos);
+    if (pos.length === 2 && pos[0] >= '1' && pos[0] <= '4') return groupPosition(pos);
     return 'TBD';
   };
 
