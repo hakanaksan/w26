@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Header from '@/components/Header';
 import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { resolveRealBracket } from '@/data/bracket';
 
 export default function MatchDetailPage() {
   const { user, token } = useAuth();
@@ -14,8 +15,25 @@ export default function MatchDetailPage() {
   const router = useRouter();
   const matchId = params.id as string;
 
-  const match = allMatches.find(m => m.id === matchId);
   const [localMatches, setLocalMatches] = useState(allMatches);
+  const resolvedLocalMatches = useMemo(() => {
+    const resolvedBracketSlots = resolveRealBracket(localMatches);
+    return localMatches.map(m => {
+      if (m.stage !== 'Grup') {
+        const slot = resolvedBracketSlots.find(s => s.matchId === m.id);
+        if (slot) {
+          return {
+            ...m,
+            homeTeamId: slot.homeTeamId !== 'TBD' ? slot.homeTeamId : m.homeTeamId,
+            awayTeamId: slot.awayTeamId !== 'TBD' ? slot.awayTeamId : m.awayTeamId,
+          };
+        }
+      }
+      return m;
+    });
+  }, [localMatches]);
+
+  const match = resolvedLocalMatches.find(m => m.id === matchId);
   const [prediction, setPrediction] = useState<{ homeScore: number; awayScore: number } | null>(null);
   const [isEditingPred, setIsEditingPred] = useState(false);
   const [homePred, setHomePred] = useState('');
@@ -42,7 +60,7 @@ export default function MatchDetailPage() {
     } catch {}
   };
 
-  const { mergedMatches: matches, liveMatches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(localMatches);
+  const { mergedMatches: matches, liveMatches, refresh: refreshLiveScores, isLoading: liveLoading, isApiConfigured } = useLiveScores(resolvedLocalMatches);
   const liveMatch = matches.find(m => m.id === matchId);
 
   const liveApiData = liveMatches.find((m: any) => {

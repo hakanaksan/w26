@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import Header from '@/components/Header';
 import DaySelector from '@/components/DaySelector';
@@ -19,6 +19,7 @@ import { matches as allMatches } from '@/data/fixtures';
 import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
 import { getMatchStatus } from '@/lib/match-status';
+import { resolveRealBracket } from '@/data/bracket';
 
 export default function Home() {
   const { user, token } = useAuth();
@@ -68,6 +69,23 @@ export default function Home() {
     }
   }, []);
   const [localMatches, setLocalMatches] = useState(allMatches);
+  const resolvedLocalMatches = useMemo(() => {
+    const resolvedBracketSlots = resolveRealBracket(localMatches);
+    return localMatches.map(m => {
+      if (m.stage !== 'Grup') {
+        const slot = resolvedBracketSlots.find(s => s.matchId === m.id);
+        if (slot) {
+          return {
+            ...m,
+            homeTeamId: slot.homeTeamId !== 'TBD' ? slot.homeTeamId : m.homeTeamId,
+            awayTeamId: slot.awayTeamId !== 'TBD' ? slot.awayTeamId : m.awayTeamId,
+          };
+        }
+      }
+      return m;
+    });
+  }, [localMatches]);
+
   const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notificationModal, setNotificationModal] = useState<{ matchId: string; matchName: string } | null>(null);
@@ -78,7 +96,7 @@ export default function Home() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; outcome: number; goalCount: number; missed: number; points: number } } | null>(null);
 
-  const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(localMatches);
+  const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(resolvedLocalMatches);
 
   const [targetMatchDetails, setTargetMatchDetails] = useState<any>(null);
   const [targetMatchEvents, setTargetMatchEvents] = useState<any[]>([]);
