@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { leagues, leagueMembers, predictions, users, matchScores } from '@/lib/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';

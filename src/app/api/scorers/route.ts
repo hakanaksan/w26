@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { scorers } from '@/lib/schema';
 import { desc, sql, asc, and, eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const allScorers = await db.select().from(scorers).orderBy(desc(scorers.createdAt));
