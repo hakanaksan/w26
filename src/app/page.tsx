@@ -392,7 +392,7 @@ export default function Home() {
       }
 
       // Calculate extra penalty points
-      if (isKnockout && m.homeScore === m.awayScore) {
+      if (m.id >= 'M081' && m.homeScore === m.awayScore) {
         const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
         const actualWinner = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : (m.homePenaltyScore !== undefined && m.awayPenaltyScore !== undefined && m.homePenaltyScore > m.awayPenaltyScore ? 'home' : 'away'));
         if (predWinner === actualWinner) {
