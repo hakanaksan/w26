@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { client } from '@/lib/db-client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const result = await client.execute('SELECT * FROM match_scores');
@@ -41,8 +43,8 @@ export async function POST(request: Request) {
           ON CONFLICT(match_id) DO UPDATE SET
             home_score = excluded.home_score,
             away_score = excluded.away_score,
-            home_penalty_score = excluded.home_penalty_score,
-            away_penalty_score = excluded.away_penalty_score,
+            home_penalty_score = CASE WHEN excluded.home_penalty_score IS NOT NULL THEN excluded.home_penalty_score ELSE match_scores.home_penalty_score END,
+            away_penalty_score = CASE WHEN excluded.away_penalty_score IS NOT NULL THEN excluded.away_penalty_score ELSE match_scores.away_penalty_score END,
             is_completed = excluded.is_completed,
             updated_at = excluded.updated_at`,
     args: [id, matchId, homeScore, awayScore, hPen, aPen, isCompleted, now],

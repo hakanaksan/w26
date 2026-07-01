@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { client } from '@/lib/db-client';
 
+export const dynamic = 'force-dynamic';
+
 function calculatePredictionPoints(
   predHome: number, predAway: number, predHomePen: number | undefined, predAwayPen: number | undefined,
   actualHome: number, actualAway: number, actualHomePen: number | undefined, actualAwayPen: number | undefined,

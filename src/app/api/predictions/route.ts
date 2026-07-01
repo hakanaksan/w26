@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { client } from '@/lib/db-client';
 import { verifyToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 async function getUser(request: Request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
