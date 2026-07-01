@@ -34,10 +34,12 @@ export default function MatchDetailPage() {
   }, [localMatches]);
 
   const match = resolvedLocalMatches.find(m => m.id === matchId);
-  const [prediction, setPrediction] = useState<{ homeScore: number; awayScore: number } | null>(null);
+  const [prediction, setPrediction] = useState<{ homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number } | null>(null);
   const [isEditingPred, setIsEditingPred] = useState(false);
   const [homePred, setHomePred] = useState('');
   const [awayPred, setAwayPred] = useState('');
+  const [homePenPred, setHomePenPred] = useState('');
+  const [awayPenPred, setAwayPenPred] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [matchEvents, setMatchEvents] = useState<{ id: string; teamId: string; playerName: string; minute: number | null; isPenalty: boolean; isOwnGoal: boolean; eventType: 'goal' | 'yellowCard' | 'redCard' }[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -48,7 +50,7 @@ export default function MatchDetailPage() {
   const [eventIsOwnGoal, setEventIsOwnGoal] = useState(false);
   const savedGoalKeys = useRef(new Set<string>());
 
-  const [userPredictions, setUserPredictions] = useState<{ userId: string; userName: string; homeScore: number; awayScore: number; points: number; hasPoints: boolean }[]>([]);
+  const [userPredictions, setUserPredictions] = useState<{ userId: string; userName: string; homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number; points: number; hasPoints: boolean }[]>([]);
 
   const loadUserPredictions = async () => {
     try {
@@ -76,10 +78,10 @@ export default function MatchDetailPage() {
         const res = await fetch('/api/scores');
         if (res.ok) {
           const data = await res.json();
-          const scores: Record<string, { homeScore: number; awayScore: number; isCompleted: boolean }> = data.scores || {};
+          const scores: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number; isCompleted: boolean }> = data.scores || {};
           setLocalMatches(allMatches.map(m => {
             const s = scores[m.id];
-            if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
+            if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, homePenaltyScore: s.homePenaltyScore, awayPenaltyScore: s.awayPenaltyScore, isCompleted: s.isCompleted };
             return m;
           }));
         }
@@ -96,7 +98,13 @@ export default function MatchDetailPage() {
       .then(res => res.ok ? res.json() : { predictions: {} })
       .then(data => {
         const p = data.predictions?.[matchId];
-        if (p) setPrediction(p);
+        if (p) {
+          setPrediction(p);
+          setHomePred(String(p.homeScore));
+          setAwayPred(String(p.awayScore));
+          setHomePenPred(p.homePenaltyScore !== undefined && p.homePenaltyScore !== null ? String(p.homePenaltyScore) : '');
+          setAwayPenPred(p.awayPenaltyScore !== undefined && p.awayPenaltyScore !== null ? String(p.awayPenaltyScore) : '');
+        }
       })
       .catch(() => {});
 
@@ -197,11 +205,27 @@ export default function MatchDetailPage() {
     const h = parseInt(homePred);
     const a = parseInt(awayPred);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
-    setPrediction({ homeScore: h, awayScore: a });
+
+    let hPen: number | undefined;
+    let aPen: number | undefined;
+    if (h === a && match.stage !== 'Grup') {
+      hPen = parseInt(homePenPred);
+      aPen = parseInt(awayPenPred);
+      if (isNaN(hPen) || isNaN(aPen) || hPen < 0 || aPen < 0 || hPen === aPen) {
+        alert('Penaltılarda kazananı belirlemek için farklı skorlar girmelisiniz.');
+        return;
+      }
+    }
+
+    setPrediction({ homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen });
     setIsEditingPred(false);
     if (token) {
       try {
-        await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, homeScore: h, awayScore: a }) });
+        await fetch('/api/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId, homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen })
+        });
         loadUserPredictions();
       } catch {}
     }
@@ -211,6 +235,8 @@ export default function MatchDetailPage() {
     setPrediction(null);
     setHomePred('');
     setAwayPred('');
+    setHomePenPred('');
+    setAwayPenPred('');
     if (token) {
       try {
         await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) });
@@ -278,6 +304,8 @@ export default function MatchDetailPage() {
 
   const [scoreHome, setScoreHome] = useState('');
   const [scoreAway, setScoreAway] = useState('');
+  const [scoreHomePen, setScoreHomePen] = useState('');
+  const [scoreAwayPen, setScoreAwayPen] = useState('');
   const [scoreCompleted, setScoreCompleted] = useState(true);
   const [isEditingScore, setIsEditingScore] = useState(false);
 
@@ -285,22 +313,36 @@ export default function MatchDetailPage() {
     const h = parseInt(scoreHome);
     const a = parseInt(scoreAway);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
-    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: h, awayScore: a, isCompleted: scoreCompleted } : m));
+
+    let hPen: number | undefined;
+    let aPen: number | undefined;
+    if (h === a && match.stage !== 'Grup') {
+      hPen = parseInt(scoreHomePen);
+      aPen = parseInt(scoreAwayPen);
+      if (isNaN(hPen) || isNaN(aPen) || hPen < 0 || aPen < 0 || hPen === aPen) {
+        alert('Penaltılarda kazananı belirlemek için farklı skorlar girmelisiniz.');
+        return;
+      }
+    }
+
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen, isCompleted: scoreCompleted } : m));
     setIsEditingScore(false);
     setScoreHome('');
     setScoreAway('');
+    setScoreHomePen('');
+    setScoreAwayPen('');
     try {
       await fetch('/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, homeScore: h, awayScore: a, isCompleted: scoreCompleted }),
+        body: JSON.stringify({ matchId, homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen, isCompleted: scoreCompleted }),
       });
       loadUserPredictions();
     } catch {}
   };
 
   const handleClearScore = async () => {
-    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: undefined, awayScore: undefined, isCompleted: false } : m));
+    setLocalMatches(prev => prev.map(m => m.id === matchId ? { ...m, homeScore: undefined, awayScore: undefined, homePenaltyScore: undefined, awayPenaltyScore: undefined, isCompleted: false } : m));
     try {
       await fetch('/api/scores', {
         method: 'DELETE',
@@ -362,7 +404,14 @@ export default function MatchDetailPage() {
             <div className="text-center px-4">
               {hasScore ? (
                 <div>
-                  <p className="text-5xl font-black text-gray-900 dark:text-white">{currentMatch.homeScore} - {currentMatch.awayScore}</p>
+                  <p className="text-5xl font-black text-gray-900 dark:text-white">
+                    {currentMatch.homeScore} - {currentMatch.awayScore}
+                  </p>
+                  {currentMatch.homeScore === currentMatch.awayScore && currentMatch.homePenaltyScore !== undefined && currentMatch.awayPenaltyScore !== undefined && (
+                    <p className="text-lg font-bold text-gray-500 dark:text-gray-400 mt-1">
+                      (Pen: {currentMatch.homePenaltyScore} - {currentMatch.awayPenaltyScore})
+                    </p>
+                  )}
                   {isCompleted ? (
                     <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">Maç Bitti</p>
                   ) : isLive ? (
@@ -394,6 +443,16 @@ export default function MatchDetailPage() {
                     <input type="number" min="0" max="99" value={scoreAway} onChange={e => setScoreAway(e.target.value)} className="w-14 text-center text-xl font-bold bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="0" />
                     <span className="text-sm font-bold text-gray-900 dark:text-white w-12">{awayTeam.name.substring(0, 3)}</span>
                   </div>
+                  {scoreHome !== '' && scoreAway !== '' && parseInt(scoreHome) === parseInt(scoreAway) && match.stage !== 'Grup' && (
+                    <div className="flex flex-col items-center gap-1.5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl max-w-[200px] mx-auto">
+                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Penaltı Atışları</span>
+                      <div className="flex items-center gap-2">
+                        <input type="number" min="0" max="99" value={scoreHomePen} onChange={e => setScoreHomePen(e.target.value)} className="w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+                        <span className="text-sm font-bold text-gray-400">-</span>
+                        <input type="number" min="0" max="99" value={scoreAwayPen} onChange={e => setScoreAwayPen(e.target.value)} className="w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={handleSaveScore} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">Kaydet</button>
                     <button onClick={() => { setIsEditingScore(false); setScoreHome(''); setScoreAway(''); }} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">İptal</button>
@@ -433,7 +492,14 @@ export default function MatchDetailPage() {
             <div className="mb-4 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between text-sm">
               <span className="text-amber-700 dark:text-amber-400 font-medium">🎯 Tahminin:</span>
               <div className="flex items-center gap-3">
-                <span className="font-bold text-amber-800 dark:text-amber-300 text-lg">{prediction.homeScore} - {prediction.awayScore}</span>
+                <span className="font-bold text-amber-800 dark:text-amber-300 text-lg">
+                  {prediction.homeScore} - {prediction.awayScore}
+                  {prediction.homeScore === prediction.awayScore && prediction.homePenaltyScore !== undefined && prediction.awayPenaltyScore !== undefined && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-normal ml-1.5">
+                      (Pen: {prediction.homePenaltyScore} - {prediction.awayPenaltyScore})
+                    </span>
+                  )}
+                </span>
                 <button onClick={handleDeletePrediction} className="text-red-400 hover:text-red-600 text-xs underline">Sil</button>
               </div>
             </div>
@@ -443,10 +509,25 @@ export default function MatchDetailPage() {
             <div className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between text-sm border border-gray-200 dark:border-gray-600">
               <span className="font-medium text-gray-700 dark:text-gray-300">🎯 Tahminin:</span>
               <div className="flex items-center gap-2">
-                <span className={prediction.homeScore === currentMatch.homeScore && prediction.awayScore === currentMatch.awayScore ? 'text-emerald-600 dark:text-emerald-400 font-bold text-lg' : 'text-red-500 dark:text-red-400 font-bold text-lg'}>
+                <span className={
+                  (prediction.homeScore === currentMatch.homeScore && 
+                   prediction.awayScore === currentMatch.awayScore && 
+                   (prediction.homeScore !== prediction.awayScore || 
+                    (prediction.homePenaltyScore === currentMatch.homePenaltyScore && 
+                     prediction.awayPenaltyScore === currentMatch.awayPenaltyScore)))
+                  ? 'text-emerald-600 dark:text-emerald-400 font-bold text-lg' 
+                  : 'text-red-500 dark:text-red-400 font-bold text-lg'
+                }>
                   {prediction.homeScore} - {prediction.awayScore}
+                  {prediction.homeScore === prediction.awayScore && prediction.homePenaltyScore !== undefined && prediction.awayPenaltyScore !== undefined && (
+                    <span className="text-xs font-normal ml-1.5">(Pen: {prediction.homePenaltyScore} - {prediction.awayPenaltyScore})</span>
+                  )}
                 </span>
-                {prediction.homeScore === currentMatch.homeScore && prediction.awayScore === currentMatch.awayScore && (
+                {(prediction.homeScore === currentMatch.homeScore && 
+                  prediction.awayScore === currentMatch.awayScore && 
+                  (prediction.homeScore !== prediction.awayScore || 
+                   (prediction.homePenaltyScore === currentMatch.homePenaltyScore && 
+                    prediction.awayPenaltyScore === currentMatch.awayPenaltyScore))) && (
                   <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">✓ Tam isabet!</span>
                 )}
               </div>
@@ -477,6 +558,16 @@ export default function MatchDetailPage() {
                 <input type="number" min="0" max="99" value={awayPred} onChange={e => setAwayPred(e.target.value)} className="input-field w-16 text-center text-xl font-bold" placeholder="0" />
                 <span className="font-bold text-gray-900 dark:text-white">{awayTeam.name}</span>
               </div>
+              {homePred !== '' && awayPred !== '' && parseInt(homePred) === parseInt(awayPred) && match.stage !== 'Grup' && (
+                <div className="flex flex-col items-center gap-1.5 p-3 bg-amber-100/50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 rounded-xl mt-3 max-w-[200px] mx-auto">
+                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">Penaltı Atışları</span>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" max="99" value={homePenPred} onChange={e => setHomePenPred(e.target.value)} className="input-field w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+                    <span className="text-sm font-bold text-gray-400">-</span>
+                    <input type="number" min="0" max="99" value={awayPenPred} onChange={e => setAwayPenPred(e.target.value)} className="input-field w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+                  </div>
+                </div>
+              )}
               <div className="flex gap-3 mt-4 justify-center">
                 <button onClick={handlePredict} className="bg-amber-500 text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors">Kaydet</button>
                 <button onClick={() => setIsEditingPred(false)} className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-6 py-2 rounded-xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">İptal</button>
@@ -599,9 +690,16 @@ export default function MatchDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-gray-900 dark:text-white text-base">
-                        {pred.homeScore} - {pred.awayScore}
-                      </span>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-gray-900 dark:text-white text-base block">
+                          {pred.homeScore} - {pred.awayScore}
+                        </span>
+                        {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400 block font-semibold leading-none mt-0.5">
+                            (Pen: {pred.homePenaltyScore} - {pred.awayPenaltyScore})
+                          </span>
+                        )}
+                      </div>
                       {pred.hasPoints && (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                           pred.points === 3 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' :

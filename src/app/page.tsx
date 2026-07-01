@@ -86,7 +86,7 @@ export default function Home() {
     });
   }, [localMatches]);
 
-  const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
+  const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number }>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notificationModal, setNotificationModal] = useState<{ matchId: string; matchName: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function Home() {
   const [scorerLeaderboard, setScorerLeaderboard] = useState<{ teamId: string; playerName: string; goals: number; penalties: number; ownGoals: number }[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number }>; stats: { total: number; exact: number; outcome: number; goalCount: number; missed: number; points: number } } | null>(null);
+  const [userDetail, setUserDetail] = useState<{ user: { id: string; name: string }; predictions: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number }>; stats: { total: number; exact: number; outcome: number; goalCount: number; missed: number; points: number } } | null>(null);
 
   const { mergedMatches: matches, isLoading: liveLoading, lastUpdated, isApiConfigured, refresh: refreshLiveScores } = useLiveScores(resolvedLocalMatches);
 
@@ -177,11 +177,11 @@ export default function Home() {
         const res = await fetch('/api/scores');
         if (res.ok) {
           const data = await res.json();
-          const scores: Record<string, { homeScore: number; awayScore: number; isCompleted: boolean }> = data.scores || {};
+          const scores: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number; isCompleted: boolean }> = data.scores || {};
           if (Object.keys(scores).length > 0) {
             const updated = allMatches.map(m => {
               const s = scores[m.id];
-              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
+              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, homePenaltyScore: s.homePenaltyScore, awayPenaltyScore: s.awayPenaltyScore, isCompleted: s.isCompleted };
               return m;
             });
             setLocalMatches(updated);
@@ -926,7 +926,14 @@ export default function Home() {
                           <span className="text-xs text-gray-600 dark:text-gray-300 font-medium truncate">{awayTeam.name}</span>
                           <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0" />
                         </div>
-                        <span className="font-bold text-blue-600 dark:text-blue-400 text-sm tabular-nums ml-2">{pred.homeScore} - {pred.awayScore}</span>
+                        <div className="text-right ml-2">
+                          <span className="font-bold text-blue-600 dark:text-blue-400 text-sm tabular-nums block">{pred.homeScore} - {pred.awayScore}</span>
+                          {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold block leading-none mt-0.5">
+                              (Pen: {pred.homePenaltyScore} - {pred.awayPenaltyScore})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

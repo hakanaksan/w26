@@ -14,6 +14,8 @@ export const predictions = sqliteTable('predictions', {
   matchId: text('match_id').notNull(),
   homeScore: integer('home_score').notNull(),
   awayScore: integer('away_score').notNull(),
+  homePenaltyScore: integer('home_penalty_score'),
+  awayPenaltyScore: integer('away_penalty_score'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
@@ -23,6 +25,8 @@ export const matchScores = sqliteTable('match_scores', {
   matchId: text('match_id').notNull().unique(),
   homeScore: integer('home_score').notNull(),
   awayScore: integer('away_score').notNull(),
+  homePenaltyScore: integer('home_penalty_score'),
+  awayPenaltyScore: integer('away_penalty_score'),
   isCompleted: integer('is_completed').default(0),
   updatedAt: text('updated_at').notNull(),
 });

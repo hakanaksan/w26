@@ -11,6 +11,8 @@ export interface Match {
   group?: string;
   homeScore?: number;
   awayScore?: number;
+  homePenaltyScore?: number;
+  awayPenaltyScore?: number;
   isCompleted: boolean;
 }
 

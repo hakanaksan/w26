@@ -59,7 +59,7 @@ export default function BracketView() {
           if (Object.keys(scores).length > 0) {
             setLocalMatches(allMatches.map(m => {
               const s = scores[m.id];
-              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
+              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, homePenaltyScore: s.homePenaltyScore, awayPenaltyScore: s.awayPenaltyScore, isCompleted: s.isCompleted };
               return m;
             }));
           }
@@ -362,8 +362,8 @@ export default function BracketView() {
                 const isTBD = slot.homeTeamId === 'TBD' || slot.awayTeamId === 'TBD';
                 const actualMatch = matches.find(m => m.id === slot.matchId);
                 const status = actualMatch ? getMatchStatus(actualMatch) : { hasScore: false, isCompleted: false, isLive: false };
-                const homeWon = status.hasScore && slot.homeScore! > slot.awayScore!;
-                const awayWon = status.hasScore && slot.homeScore! < slot.awayScore!;
+                const homeWon = slot.winner === slot.homeTeamId;
+                const awayWon = slot.winner === slot.awayTeamId;
 
                 return (
                   <div key={slot.matchId} className={`relative bg-white dark:bg-gray-800 border rounded-xl overflow-hidden transition-all hover:shadow-md ${
@@ -394,7 +394,12 @@ export default function BracketView() {
                             {slot.homeTeamId === 'TBD' ? 'TBD' : home.name}
                           </span>
                           {slot.homeScore !== undefined && (
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">{slot.homeScore}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              {slot.homeScore}
+                              {slot.homeScore === slot.awayScore && slot.homePenaltyScore !== undefined && slot.awayPenaltyScore !== undefined && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal ml-1">(P:{slot.homePenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                         </div>
 
@@ -414,7 +419,12 @@ export default function BracketView() {
                             {slot.awayTeamId === 'TBD' ? 'TBD' : away.name}
                           </span>
                           {slot.awayScore !== undefined && (
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">{slot.awayScore}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              {slot.awayScore}
+                              {slot.homeScore === slot.awayScore && slot.homePenaltyScore !== undefined && slot.awayPenaltyScore !== undefined && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal ml-1">(P:{slot.awayPenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                         </div>
                       </div>

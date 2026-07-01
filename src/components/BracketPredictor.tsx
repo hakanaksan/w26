@@ -11,12 +11,14 @@ import { useLiveScores } from '@/hooks/useLiveScores';
 export default function BracketPredictor() {
   const { user, token } = useAuth();
   const [localMatches, setLocalMatches] = useState(allMatches);
-  const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
+  const [predictions, setPredictions] = useState<Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number }>>({});
   const [bracketSlots, setBracketSlots] = useState<BracketSlot[]>([]);
   const [groupStandings, setGroupStandings] = useState<Record<string, GroupStanding[]>>({});
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [homePred, setHomePred] = useState('');
   const [awayPred, setAwayPred] = useState('');
+  const [homePenPred, setHomePenPred] = useState('');
+  const [awayPenPred, setAwayPenPred] = useState('');
   const [activeRound, setActiveRound] = useState<string>('all');
 
   const { mergedMatches: matches } = useLiveScores(localMatches);
@@ -45,7 +47,7 @@ export default function BracketPredictor() {
           if (Object.keys(scores).length > 0) {
             setLocalMatches(allMatches.map(m => {
               const s = scores[m.id];
-              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, isCompleted: s.isCompleted };
+              if (s) return { ...m, homeScore: s.homeScore, awayScore: s.awayScore, homePenaltyScore: s.homePenaltyScore, awayPenaltyScore: s.awayPenaltyScore, isCompleted: s.isCompleted };
               return m;
             }));
           }
@@ -63,7 +65,7 @@ export default function BracketPredictor() {
       .catch(() => {});
   }, [token]);
 
-  const recalc = useCallback((matchData: Match[], preds: Record<string, { homeScore: number; awayScore: number }>) => {
+  const recalc = useCallback((matchData: Match[], preds: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number }>) => {
     setBracketSlots(resolveBracket(matchData, preds));
     setGroupStandings(calculateGroupStandings(matchData, preds));
   }, []);
@@ -77,19 +79,33 @@ export default function BracketPredictor() {
     const a = parseInt(awayPred);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
 
-    const newPred = { homeScore: h, awayScore: a };
+    let hPen: number | undefined;
+    let aPen: number | undefined;
+    const slot = bracketSlots.find(s => s.matchId === matchId);
+    if (slot && h === a && slot.round !== 'Grup') {
+      hPen = parseInt(homePenPred);
+      aPen = parseInt(awayPenPred);
+      if (isNaN(hPen) || isNaN(aPen) || hPen < 0 || aPen < 0 || hPen === aPen) {
+        alert('Penaltılarda kazananı belirlemek için farklı skorlar girmelisiniz.');
+        return;
+      }
+    }
+
+    const newPred = { homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen };
     const newPredictions = { ...predictions, [matchId]: newPred };
     setPredictions(newPredictions);
     setEditingMatch(null);
     setHomePred('');
     setAwayPred('');
+    setHomePenPred('');
+    setAwayPenPred('');
 
     if (token) {
       try {
         await fetch('/api/predictions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ matchId, homeScore: h, awayScore: a }),
+          body: JSON.stringify({ matchId, homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen }),
         });
       } catch {}
     }
@@ -392,8 +408,8 @@ export default function BracketPredictor() {
                 const pred = predictions[slot.matchId];
                 const isEditing = editingMatch === slot.matchId;
 
-                const isHomeWin = (slot.homeScore ?? (pred?.homeScore)) !== undefined && (slot.homeScore ?? pred!.homeScore) > (slot.awayScore ?? pred!.awayScore);
-                const isAwayWin = (slot.homeScore ?? (pred?.homeScore)) !== undefined && (slot.homeScore ?? pred!.homeScore) < (slot.awayScore ?? pred!.awayScore);
+                const isHomeWin = slot.winner === slot.homeTeamId;
+                const isAwayWin = slot.winner === slot.awayTeamId;
                 const isDraw = (slot.homeScore ?? (pred?.homeScore)) !== undefined && (slot.homeScore ?? pred!.homeScore) === (slot.awayScore ?? pred!.awayScore);
 
                 return (
@@ -424,10 +440,20 @@ export default function BracketPredictor() {
                             {slot.homeTeamId === 'TBD' ? 'TBD' : home.name}
                           </span>
                           {slot.homeScore !== undefined && (
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">{slot.homeScore}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              {slot.homeScore}
+                              {slot.homeScore === slot.awayScore && slot.homePenaltyScore !== undefined && slot.awayPenaltyScore !== undefined && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal ml-1">(P:{slot.homePenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                           {pred && slot.homeScore === undefined && (
-                            <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">{pred.homeScore}</span>
+                            <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
+                              {pred.homeScore}
+                              {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
+                                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-normal ml-0.5">(P:{pred.homePenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                         </div>
 
@@ -447,10 +473,20 @@ export default function BracketPredictor() {
                             {slot.awayTeamId === 'TBD' ? 'TBD' : away.name}
                           </span>
                           {slot.awayScore !== undefined && (
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">{slot.awayScore}</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              {slot.awayScore}
+                              {slot.homeScore === slot.awayScore && slot.homePenaltyScore !== undefined && slot.awayPenaltyScore !== undefined && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal ml-1">(P:{slot.awayPenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                           {pred && slot.awayScore === undefined && (
-                            <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">{pred.awayScore}</span>
+                            <span className="text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
+                              {pred.awayScore}
+                              {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
+                                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-normal ml-0.5">(P:{pred.awayPenaltyScore})</span>
+                              )}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -465,7 +501,7 @@ export default function BracketPredictor() {
                       )}
 
                       {user && !isTBD && !slot.isCompleted && !isEditing && !pred && (
-                        <button onClick={() => { setEditingMatch(slot.matchId); setHomePred(''); setAwayPred(''); }}
+                        <button onClick={() => { setEditingMatch(slot.matchId); setHomePred(''); setAwayPred(''); setHomePenPred(''); setAwayPenPred(''); }}
                           className="mt-2 w-full text-xs text-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border border-blue-200 dark:border-blue-800">
                           Tahmin Gir →
                         </button>
@@ -480,6 +516,16 @@ export default function BracketPredictor() {
                             <input type="number" min="0" max="99" value={awayPred} onChange={e => setAwayPred(e.target.value)} className="w-12 text-center text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="0" />
                             <span className="text-xs font-medium text-gray-900 dark:text-white w-8 truncate text-right">{(slot.awayTeamId === 'TBD' ? 'TBD' : away.name.substring(0, 3))}</span>
                           </div>
+                          {homePred !== '' && awayPred !== '' && parseInt(homePred) === parseInt(awayPred) && slot.round !== 'Grup' && (
+                            <div className="flex flex-col items-center gap-1 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mt-2 max-w-[160px] mx-auto">
+                              <span className="text-[10px] font-semibold text-amber-800 dark:text-amber-300">Penaltı Atışları</span>
+                              <div className="flex items-center gap-1.5">
+                                <input type="number" min="0" max="99" value={homePenPred} onChange={e => setHomePenPred(e.target.value)} className="w-10 text-center text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded py-0.5" placeholder="P" />
+                                <span className="text-gray-400 text-[10px]">-</span>
+                                <input type="number" min="0" max="99" value={awayPenPred} onChange={e => setAwayPenPred(e.target.value)} className="w-10 text-center text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded py-0.5" placeholder="P" />
+                              </div>
+                            </div>
+                          )}
                           <div className="flex gap-1.5">
                             <button onClick={() => handlePredict(slot.matchId)} className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium">Kaydet</button>
                             <button onClick={() => setEditingMatch(null)} className="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">İptal</button>
