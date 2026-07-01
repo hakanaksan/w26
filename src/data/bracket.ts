@@ -427,6 +427,8 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
     const awayTeam = resolvePosition(slot.awaySource);
     let homeScore: number | undefined;
     let awayScore: number | undefined;
+    let homePenaltyScore: number | undefined;
+    let awayPenaltyScore: number | undefined;
     let isCompleted = false;
     let winner = 'TBD';
 
@@ -434,11 +436,30 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
     if (actual && actual.isCompleted && actual.homeScore !== undefined && actual.awayScore !== undefined) {
       homeScore = actual.homeScore;
       awayScore = actual.awayScore;
+      homePenaltyScore = actual.homePenaltyScore;
+      awayPenaltyScore = actual.awayPenaltyScore;
       isCompleted = true;
     }
 
     if (homeScore !== undefined && awayScore !== undefined && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
-      winner = homeScore > awayScore ? homeTeam : (homeScore < awayScore ? awayTeam : homeTeam);
+      if (homeScore > awayScore) {
+        winner = homeTeam;
+      } else if (homeScore < awayScore) {
+        winner = awayTeam;
+      } else {
+        // Draw, check penalties
+        if (homePenaltyScore !== undefined && awayPenaltyScore !== undefined) {
+          if (homePenaltyScore > awayPenaltyScore) {
+            winner = homeTeam;
+          } else if (homePenaltyScore < awayPenaltyScore) {
+            winner = awayTeam;
+          } else {
+            winner = homeTeam; // tie-breaker fallback
+          }
+        } else {
+          winner = homeTeam; // fallback
+        }
+      }
       winners[slot.matchId] = winner;
     }
 
@@ -451,6 +472,8 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
       awaySource: slot.awaySource,
       homeScore,
       awayScore,
+      homePenaltyScore,
+      awayPenaltyScore,
       isCompleted,
       winner,
     });
@@ -490,6 +513,8 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
 
     let homeScore: number | undefined;
     let awayScore: number | undefined;
+    let homePenaltyScore: number | undefined;
+    let awayPenaltyScore: number | undefined;
     let isCompleted = false;
     let winner = 'TBD';
 
@@ -497,11 +522,30 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
     if (actual && actual.isCompleted && actual.homeScore !== undefined && actual.awayScore !== undefined) {
       homeScore = actual.homeScore;
       awayScore = actual.awayScore;
+      homePenaltyScore = actual.homePenaltyScore;
+      awayPenaltyScore = actual.awayPenaltyScore;
       isCompleted = true;
     }
 
     if (homeScore !== undefined && awayScore !== undefined && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
-      winner = homeScore > awayScore ? homeTeam : (homeScore < awayScore ? awayTeam : homeTeam);
+      if (homeScore > awayScore) {
+        winner = homeTeam;
+      } else if (homeScore < awayScore) {
+        winner = awayTeam;
+      } else {
+        // Draw, check penalties
+        if (homePenaltyScore !== undefined && awayPenaltyScore !== undefined) {
+          if (homePenaltyScore > awayPenaltyScore) {
+            winner = homeTeam;
+          } else if (homePenaltyScore < awayPenaltyScore) {
+            winner = awayTeam;
+          } else {
+            winner = homeTeam; // tie-breaker fallback
+          }
+        } else {
+          winner = homeTeam; // fallback
+        }
+      }
       winners[matchId] = winner;
     }
 
@@ -514,6 +558,8 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
       awaySource: awayFrom,
       homeScore,
       awayScore,
+      homePenaltyScore,
+      awayPenaltyScore,
       isCompleted,
       winner,
     });
