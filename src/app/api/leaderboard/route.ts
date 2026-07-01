@@ -19,7 +19,7 @@ function calculatePredictionPoints(
   const actualWinner = actualHome > actualAway ? 'home' : (actualHome < actualAway ? 'away' : (actualHomePen !== undefined && actualAwayPen !== undefined && actualHomePen > actualAwayPen ? 'home' : 'away'));
 
   if (isKnockout) {
-    if (predWinner === actualWinner) return 'outcome';
+    if (predWinner === actualWinner || (predHome === predAway && actualHome === actualAway)) return 'outcome';
   } else {
     const predOutcome = predHome > predAway ? 'home' : (predHome < predAway ? 'away' : 'draw');
     const actualOutcome = actualHome > actualAway ? 'home' : (actualHome < actualAway ? 'away' : 'draw');

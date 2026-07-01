@@ -124,7 +124,7 @@ export default function LeaguesView() {
                 const actualWinner = score.homeScore > score.awayScore ? 'home' : (score.homeScore < score.awayScore ? 'away' : (score.homePenaltyScore !== undefined && score.awayPenaltyScore !== undefined && score.homePenaltyScore > score.awayPenaltyScore ? 'home' : 'away'));
 
                 if (isKnockout) {
-                  if (predWinner === actualWinner) {
+                  if (predWinner === actualWinner || (pred.homeScore === pred.awayScore && score.homeScore === score.awayScore)) {
                     outcome++;
                   } else if (pred.homeScore === score.homeScore || pred.awayScore === score.awayScore) {
                     goalCount++;

@@ -371,7 +371,7 @@ export default function Home() {
         const actualWinner = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : (m.homePenaltyScore !== undefined && m.awayPenaltyScore !== undefined && m.homePenaltyScore > m.awayPenaltyScore ? 'home' : 'away'));
 
         if (isKnockout) {
-          if (predWinner === actualWinner) {
+          if (predWinner === actualWinner || (pred.homeScore === pred.awayScore && m.homeScore === m.awayScore)) {
             outcome++;
           } else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore) {
             goalCount++;
@@ -981,7 +981,7 @@ export default function Home() {
 
                     let isOutcome = false;
                     if (isKnockout) {
-                      isOutcome = predWinner === actualWinner;
+                      isOutcome = predWinner === actualWinner || (pred.homeScore === pred.awayScore && match.homeScore === match.awayScore);
                     } else {
                       const predOutcome = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : 'draw');
                       const actualOutcome = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : 'draw');
