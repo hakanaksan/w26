@@ -20,21 +20,31 @@ import { getTeam, getFlagUrl } from '@/data/teams';
 import { useLiveScores } from '@/hooks/useLiveScores';
 import { getMatchStatus } from '@/lib/match-status';
 import { resolveRealBracket } from '@/data/bracket';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { user, token } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('fixtures');
 
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    window.history.pushState(null, '', `/?tab=${tab}`);
+    if (tab === 'bracket') {
+      router.push('/bracket');
+    } else {
+      setActiveTab(tab);
+      window.history.pushState(null, '', `/?tab=${tab}`);
+    }
   };
 
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab') || 'fixtures';
-      setActiveTab(tab);
+      if (tab === 'bracket') {
+        router.push('/bracket');
+      } else {
+        setActiveTab(tab);
+      }
     };
 
     handlePopState();
@@ -43,7 +53,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [router]);
   const [bracketView, setBracketView] = useState<'real' | 'predict'>('real');
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date().toLocaleDateString('sv-SE');

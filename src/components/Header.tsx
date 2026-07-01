@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   activeTab: string;
@@ -13,6 +14,7 @@ interface HeaderProps {
 export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -67,7 +69,11 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
 
   const handleTabClick = (tabId: string) => {
     setMenuOpen(false);
-    onTabChange(tabId);
+    if (tabId === 'bracket') {
+      router.push('/bracket');
+    } else {
+      onTabChange(tabId);
+    }
   };
 
   const isActiveInMore = moreTabs.some(t => t.id === activeTab);

@@ -8,6 +8,27 @@ import { getTeam, getFlagUrl } from '@/data/teams';
 import { resolveBracket, calculateGroupStandings, BracketSlot, GroupStanding } from '@/data/bracket';
 import { useLiveScores } from '@/hooks/useLiveScores';
 
+function formatSourceLabel(source: string | undefined): string {
+  if (!source) return 'TBD';
+  if (source.endsWith('_W')) {
+    return `${source.replace('_W', '')} Galibi`;
+  }
+  if (source.endsWith('_L')) {
+    return `${source.replace('_L', '')} Mağlubu`;
+  }
+  if (source.startsWith('M')) {
+    return `${source} Galibi`;
+  }
+  if (source.startsWith('3RD_')) {
+    return `En İyi 3. (${source.replace('3RD_', '')})`;
+  }
+  if (source.length === 2 && source[0] >= '1' && source[0] <= '4') {
+    const pos = source[0] === '1' ? '1.' : source[0] === '2' ? '2.' : source[0] === '3' ? '3.' : '4.';
+    return `${source[1]} Grubu ${pos}`;
+  }
+  return source;
+}
+
 export default function BracketPredictor() {
   const { user, token } = useAuth();
   const [localMatches, setLocalMatches] = useState(allMatches);
@@ -436,8 +457,8 @@ export default function BracketPredictor() {
                               <span className="text-[10px] text-gray-400">?</span>
                             </div>
                           )}
-                          <span className={`text-sm font-medium flex-1 truncate ${isTBD ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-                            {slot.homeTeamId === 'TBD' ? 'TBD' : home.name}
+                          <span className={`text-sm font-medium flex-1 truncate ${slot.homeTeamId === 'TBD' ? 'text-gray-400 dark:text-gray-500 italic text-xs' : 'text-gray-900 dark:text-white'}`}>
+                            {slot.homeTeamId === 'TBD' ? formatSourceLabel(slot.homeSource) : home.name}
                           </span>
                           {slot.homeScore !== undefined && (
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -469,8 +490,8 @@ export default function BracketPredictor() {
                               <span className="text-[10px] text-gray-400">?</span>
                             </div>
                           )}
-                          <span className={`text-sm font-medium flex-1 truncate ${isTBD ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-                            {slot.awayTeamId === 'TBD' ? 'TBD' : away.name}
+                          <span className={`text-sm font-medium flex-1 truncate ${slot.awayTeamId === 'TBD' ? 'text-gray-400 dark:text-gray-500 italic text-xs' : 'text-gray-900 dark:text-white'}`}>
+                            {slot.awayTeamId === 'TBD' ? formatSourceLabel(slot.awaySource) : away.name}
                           </span>
                           {slot.awayScore !== undefined && (
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
