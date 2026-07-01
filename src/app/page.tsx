@@ -392,7 +392,7 @@ export default function Home() {
       }
 
       // Calculate extra penalty points
-      if (m.id >= 'M081' && m.homeScore === m.awayScore) {
+      if (m.id >= 'M081' && m.homeScore === m.awayScore && pred.homeScore === pred.awayScore) {
         const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
         const actualWinner = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : (m.homePenaltyScore !== undefined && m.awayPenaltyScore !== undefined && m.homePenaltyScore > m.awayPenaltyScore ? 'home' : 'away'));
         if (predWinner === actualWinner) {
@@ -966,7 +966,7 @@ export default function Home() {
 
                     if (isExact) {
                       let bonus = 0;
-                      if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore) {
+                      if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
                         const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
                         const actualWinner = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : (match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && match.homePenaltyScore > match.awayPenaltyScore ? 'home' : 'away'));
                         if (predWinner === actualWinner) {
@@ -989,7 +989,7 @@ export default function Home() {
                     }
 
                     let bonus = 0;
-                    if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore) {
+                    if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
                       if (predWinner === actualWinner) {
                         bonus = 3;
                       }

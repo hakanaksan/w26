@@ -141,7 +141,7 @@ export default function LeaguesView() {
               }
 
               // Extra penalty points
-              if (matchId >= 'M081' && score.homeScore === score.awayScore) {
+              if (matchId >= 'M081' && score.homeScore === score.awayScore && pred.homeScore === pred.awayScore) {
                 const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
                 const actualWinner = score.homeScore > score.awayScore ? 'home' : (score.homeScore < score.awayScore ? 'away' : (score.homePenaltyScore !== undefined && score.awayPenaltyScore !== undefined && score.homePenaltyScore > score.awayPenaltyScore ? 'home' : 'away'));
                 if (predWinner === actualWinner) {

@@ -78,7 +78,7 @@ export async function GET(request: Request) {
         else missed++;
 
         // Calculate extra penalty points
-        if (matchId >= 'M081' && score.home === score.away) {
+        if (matchId >= 'M081' && score.home === score.away && pred.homeScore === pred.awayScore) {
           const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
           const actualWinner = score.home > score.away ? 'home' : (score.home < score.away ? 'away' : (score.homePenalty !== undefined && score.awayPenalty !== undefined && score.homePenalty > score.awayPenalty ? 'home' : 'away'));
           if (predWinner === actualWinner) {
@@ -145,7 +145,7 @@ export async function GET(request: Request) {
         else missed++;
 
         // Calculate extra penalty points
-        if (matchId >= 'M081' && score.home === score.away) {
+        if (matchId >= 'M081' && score.home === score.away && pred.home === pred.away) {
           const predWinner = pred.home > pred.away ? 'home' : (pred.home < pred.away ? 'away' : (pred.homePenalty !== undefined && pred.awayPenalty !== undefined && pred.homePenalty > pred.awayPenalty ? 'home' : 'away'));
           const actualWinner = score.home > score.away ? 'home' : (score.home < score.away ? 'away' : (score.homePenalty !== undefined && score.awayPenalty !== undefined && score.homePenalty > score.awayPenalty ? 'home' : 'away'));
           if (predWinner === actualWinner) {
