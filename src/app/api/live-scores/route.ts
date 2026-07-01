@@ -81,6 +81,8 @@ interface MatchResult {
   awayLogo: string;
   homeScore: number | null;
   awayScore: number | null;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
   status: string;
   date: string;
   time: string;
@@ -408,13 +410,33 @@ function alignMatchDates(fetchedMatches: MatchResult[], resolvedSlots: any[] = [
 
     if (targetMatch) {
       const isSwapped = targetMatch.homeTeamId === fm.awayCode && targetMatch.awayTeamId === fm.homeCode;
+      const isKnockout = targetMatch.id >= 'M073';
+      
+      let homeScore90 = isSwapped ? fm.awayScore : fm.homeScore;
+      let awayScore90 = isSwapped ? fm.homeScore : fm.awayScore;
+      let homePenalty = fm.homePenaltyScore;
+      let awayPenalty = fm.awayPenaltyScore;
+
+      if (isKnockout && homeScore90 !== null && awayScore90 !== null) {
+        const wentToExtraTime = fm.status?.includes('AET') || fm.status?.includes('PEN') || (fm.goals || []).some(g => !g.isYellowCard && !g.isRedCard && g.minute !== null && g.minute > 90);
+        if (wentToExtraTime && homeScore90 !== awayScore90) {
+          const minScore = Math.min(homeScore90, awayScore90);
+          homePenalty = homeScore90;
+          awayPenalty = awayScore90;
+          homeScore90 = minScore;
+          awayScore90 = minScore;
+        }
+      }
+
       return {
         ...fm,
         date: targetMatch.date,
         homeCode: targetMatch.homeTeamId,
         awayCode: targetMatch.awayTeamId,
-        homeScore: isSwapped ? fm.awayScore : fm.homeScore,
-        awayScore: isSwapped ? fm.homeScore : fm.awayScore,
+        homeScore: homeScore90,
+        awayScore: awayScore90,
+        homePenaltyScore: homePenalty,
+        awayPenaltyScore: awayPenalty,
         goals: (fm.goals || []).map(g => {
           const isHomeGoal = g.teamCode === fm.homeCode;
           return {

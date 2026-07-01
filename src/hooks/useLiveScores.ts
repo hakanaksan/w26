@@ -43,7 +43,7 @@ interface LiveScoresResult {
   refresh: (customDate?: string) => Promise<void>;
 }
 
-function matchApiToLocal(localMatch: Match, apiMatches: LiveScoreMatch[]): { homeScore: number | null; awayScore: number | null; isCompleted: boolean; isLive: boolean } | null {
+function matchApiToLocal(localMatch: Match, apiMatches: any[]): { homeScore: number | null; awayScore: number | null; homePenaltyScore?: number | null; awayPenaltyScore?: number | null; isCompleted: boolean; isLive: boolean } | null {
   for (const api of apiMatches) {
     const dateMatch = localMatch.date === api.date;
     const homeMatch = api.homeCode ? localMatch.homeTeamId === api.homeCode : false;
@@ -52,6 +52,8 @@ function matchApiToLocal(localMatch: Match, apiMatches: LiveScoreMatch[]): { hom
       return {
         homeScore: api.homeScore,
         awayScore: api.awayScore,
+        homePenaltyScore: api.homePenaltyScore,
+        awayPenaltyScore: api.awayPenaltyScore,
         isCompleted: api.isCompleted,
         isLive: api.isLive,
       };
@@ -90,7 +92,7 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
         setLiveMatches(data.matches || []);
         setLastUpdated(data.fetchedAt);
 
-        const apiMatches: LiveScoreMatch[] = data.matches || [];
+        const apiMatches: any[] = data.matches || [];
         const currentMatches = matchesRef.current;
         for (const local of currentMatches) {
           const apiResult = matchApiToLocal(local, apiMatches);
@@ -102,6 +104,8 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
                 matchId: local.id,
                 homeScore: apiResult.homeScore ?? 0,
                 awayScore: apiResult.awayScore ?? 0,
+                homePenaltyScore: apiResult.homePenaltyScore,
+                awayPenaltyScore: apiResult.awayPenaltyScore,
                 isCompleted: apiResult.isCompleted,
               }),
             }).catch(() => {});
@@ -122,14 +126,8 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
         ...localMatch,
         homeScore: apiResult.homeScore ?? localMatch.homeScore,
         awayScore: apiResult.awayScore ?? localMatch.awayScore,
-        isCompleted: apiResult.isCompleted,
-      };
-    }
-    if (apiResult && apiResult.homeScore !== null && apiResult.homeScore > 0 || apiResult && apiResult.awayScore !== null && apiResult.awayScore > 0) {
-      return {
-        ...localMatch,
-        homeScore: apiResult.homeScore ?? localMatch.homeScore,
-        awayScore: apiResult.awayScore ?? localMatch.awayScore,
+        homePenaltyScore: (apiResult.homePenaltyScore !== undefined && apiResult.homePenaltyScore !== null) ? apiResult.homePenaltyScore : localMatch.homePenaltyScore,
+        awayPenaltyScore: (apiResult.awayPenaltyScore !== undefined && apiResult.awayPenaltyScore !== null) ? apiResult.awayPenaltyScore : localMatch.awayPenaltyScore,
         isCompleted: apiResult.isCompleted,
       };
     }
