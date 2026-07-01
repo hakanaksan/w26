@@ -8,16 +8,16 @@ import { getTeam, getFlagUrl } from '@/data/teams';
 import { resolveBracket, calculateGroupStandings, BracketSlot, GroupStanding } from '@/data/bracket';
 import { useLiveScores } from '@/hooks/useLiveScores';
 
-function formatSourceLabel(source: string | undefined): string {
+function formatSourceLabel(source: string | undefined, slots: BracketSlot[]): string {
   if (!source) return 'TBD';
-  if (source.endsWith('_W')) {
-    return `${source.replace('_W', '')} Galibi`;
-  }
-  if (source.endsWith('_L')) {
-    return `${source.replace('_L', '')} Mağlubu`;
-  }
   if (source.startsWith('M')) {
-    return `${source} Galibi`;
+    const cleanMatchId = source.replace('_W', '').replace('_L', '');
+    const isLoser = source.endsWith('_L');
+    const srcSlot = slots.find(s => s.matchId === cleanMatchId);
+    if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD') {
+      return `${srcSlot.homeTeamId}/${srcSlot.awayTeamId} ${isLoser ? 'Mağlubu' : 'Galibi'}`;
+    }
+    return `${cleanMatchId} ${isLoser ? 'Mağlubu' : 'Galibi'}`;
   }
   if (source.startsWith('3RD_')) {
     return `En İyi 3. (${source.replace('3RD_', '')})`;
@@ -458,7 +458,7 @@ export default function BracketPredictor() {
                             </div>
                           )}
                           <span className={`text-sm font-medium flex-1 truncate ${slot.homeTeamId === 'TBD' ? 'text-gray-400 dark:text-gray-500 italic text-xs' : 'text-gray-900 dark:text-white'}`}>
-                            {slot.homeTeamId === 'TBD' ? formatSourceLabel(slot.homeSource) : home.name}
+                            {slot.homeTeamId === 'TBD' ? formatSourceLabel(slot.homeSource, bracketSlots) : home.name}
                           </span>
                           {slot.homeScore !== undefined && (
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -491,7 +491,7 @@ export default function BracketPredictor() {
                             </div>
                           )}
                           <span className={`text-sm font-medium flex-1 truncate ${slot.awayTeamId === 'TBD' ? 'text-gray-400 dark:text-gray-500 italic text-xs' : 'text-gray-900 dark:text-white'}`}>
-                            {slot.awayTeamId === 'TBD' ? formatSourceLabel(slot.awaySource) : away.name}
+                            {slot.awayTeamId === 'TBD' ? formatSourceLabel(slot.awaySource, bracketSlots) : away.name}
                           </span>
                           {slot.awayScore !== undefined && (
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
