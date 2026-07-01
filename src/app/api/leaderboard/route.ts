@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       }
 
       let exact = 0, outcome = 0, goalCount = 0, missed = 0;
+      let extraPenaltyPoints = 0;
       for (const [matchId, pred] of Object.entries(predictions)) {
         const score = scores[matchId];
         if (!score) continue;
@@ -75,12 +76,22 @@ export async function GET(request: Request) {
         else if (result === 'outcome') outcome++;
         else if (result === 'goalCount') goalCount++;
         else missed++;
+
+        // Calculate extra penalty points
+        const isKnockout = matchId >= 'M073';
+        if (isKnockout && score.home === score.away) {
+          const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+          const actualWinner = score.home > score.away ? 'home' : (score.home < score.away ? 'away' : (score.homePenalty !== undefined && score.awayPenalty !== undefined && score.homePenalty > score.awayPenalty ? 'home' : 'away'));
+          if (predWinner === actualWinner) {
+            extraPenaltyPoints += 3;
+          }
+        }
       }
 
       return NextResponse.json({
         user: { id: userResult.rows[0].id, name: userResult.rows[0].name },
         predictions,
-        stats: { total: Object.keys(predictions).length, exact, outcome, goalCount, missed, points: exact * 3 + outcome * 2 + goalCount },
+        stats: { total: Object.keys(predictions).length, exact, outcome, goalCount, missed, points: exact * 3 + outcome * 2 + goalCount + extraPenaltyPoints },
       });
     }
 
@@ -118,6 +129,7 @@ export async function GET(request: Request) {
       let outcome = 0;
       let goalCount = 0;
       let missed = 0;
+      let extraPenaltyPoints = 0;
       let totalPredictions = Object.keys(userPreds).length;
 
       for (const [matchId, pred] of Object.entries(userPreds)) {
@@ -132,9 +144,19 @@ export async function GET(request: Request) {
         else if (result === 'outcome') outcome++;
         else if (result === 'goalCount') goalCount++;
         else missed++;
+
+        // Calculate extra penalty points
+        const isKnockout = matchId >= 'M073';
+        if (isKnockout && score.home === score.away) {
+          const predWinner = pred.home > pred.away ? 'home' : (pred.home < pred.away ? 'away' : (pred.homePenalty !== undefined && pred.awayPenalty !== undefined && pred.homePenalty > pred.awayPenalty ? 'home' : 'away'));
+          const actualWinner = score.home > score.away ? 'home' : (score.home < score.away ? 'away' : (score.homePenalty !== undefined && score.awayPenalty !== undefined && score.homePenalty > score.awayPenalty ? 'home' : 'away'));
+          if (predWinner === actualWinner) {
+            extraPenaltyPoints += 3;
+          }
+        }
       }
 
-      const points = exact * 3 + outcome * 2 + goalCount;
+      const points = exact * 3 + outcome * 2 + goalCount + extraPenaltyPoints;
       const completedPredictions = Object.keys(userPreds).filter(mid => scores[mid]).length;
 
       return {

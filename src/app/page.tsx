@@ -353,20 +353,54 @@ export default function Home() {
 
   const getPredictionStats = () => {
     const completedWithPredictions = matches.filter(m => m.isCompleted && predictions[m.id]);
-    if (completedWithPredictions.length === 0) return { total: 0, exact: 0, outcome: 0, goalCount: 0, missed: 0 };
-    let exact = 0, outcome = 0, goalCount = 0, missed = 0;
+    if (completedWithPredictions.length === 0) return { total: 0, exact: 0, outcome: 0, goalCount: 0, missed: 0, extraPenaltyPoints: 0 };
+    let exact = 0, outcome = 0, goalCount = 0, missed = 0, extraPenaltyPoints = 0;
     completedWithPredictions.forEach(m => {
       const pred = predictions[m.id];
-      if (pred.homeScore === m.homeScore && pred.awayScore === m.awayScore) { exact++; }
-      else {
-        const predOutcome = pred.homeScore > pred.awayScore ? 'home' : pred.homeScore < pred.awayScore ? 'away' : 'draw';
-        const actualOutcome = m.homeScore! > m.awayScore! ? 'home' : m.homeScore! < m.awayScore! ? 'away' : 'draw';
-        if (predOutcome === actualOutcome) { outcome++; }
-        else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore) { goalCount++; }
-        else { missed++; }
+      const isKnockout = m.id >= 'M073';
+      
+      const isRegularExact = pred.homeScore === m.homeScore && pred.awayScore === m.awayScore;
+      const isExact = isKnockout && m.homeScore === m.awayScore
+        ? isRegularExact && pred.homePenaltyScore !== undefined && m.homePenaltyScore !== undefined && pred.homePenaltyScore === m.homePenaltyScore && pred.awayPenaltyScore === m.awayPenaltyScore
+        : isRegularExact;
+
+      if (isExact) {
+        exact++;
+      } else {
+        const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+        const actualWinner = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : (m.homePenaltyScore !== undefined && m.awayPenaltyScore !== undefined && m.homePenaltyScore > m.awayPenaltyScore ? 'home' : 'away'));
+
+        if (isKnockout) {
+          if (predWinner === actualWinner) {
+            outcome++;
+          } else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore) {
+            goalCount++;
+          } else {
+            missed++;
+          }
+        } else {
+          const predOutcome = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : 'draw');
+          const actualOutcome = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : 'draw');
+          if (predOutcome === actualOutcome) {
+            outcome++;
+          } else if (pred.homeScore === m.homeScore || pred.awayScore === m.awayScore) {
+            goalCount++;
+          } else {
+            missed++;
+          }
+        }
+      }
+
+      // Calculate extra penalty points
+      if (isKnockout && m.homeScore === m.awayScore) {
+        const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+        const actualWinner = m.homeScore! > m.awayScore! ? 'home' : (m.homeScore! < m.awayScore! ? 'away' : (m.homePenaltyScore !== undefined && m.awayPenaltyScore !== undefined && m.homePenaltyScore > m.awayPenaltyScore ? 'home' : 'away'));
+        if (predWinner === actualWinner) {
+          extraPenaltyPoints += 3;
+        }
       }
     });
-    return { total: completedWithPredictions.length, exact, outcome, goalCount, missed };
+    return { total: completedWithPredictions.length, exact, outcome, goalCount, missed, extraPenaltyPoints };
   };
 
   const stats = getMatchStats();
@@ -973,7 +1007,7 @@ export default function Home() {
                   exact={predStats.exact}
                   outcome={predStats.outcome}
                   goalCount={predStats.goalCount}
-                  points={predStats.exact * 3 + predStats.outcome * 2 + predStats.goalCount}
+                  points={predStats.exact * 3 + predStats.outcome * 2 + predStats.goalCount + (predStats.extraPenaltyPoints || 0)}
                 />
               )}
             </div>

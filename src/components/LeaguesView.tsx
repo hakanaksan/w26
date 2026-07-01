@@ -91,6 +91,11 @@ export default function LeaguesView() {
   const handleLeagueClick = async (league: League) => {
     setSelectedLeague(league);
     try {
+      // Fetch scores
+      const scoresRes = await fetch('/api/scores');
+      const scoresData = scoresRes.ok ? await scoresRes.json() : { scores: {} };
+      const scores = scoresData.scores || {};
+
       const res = await fetch(`/api/leagues?code=${league.code}`);
       const data = await res.json();
       if (data.members) {
@@ -100,8 +105,53 @@ export default function LeaguesView() {
             const predData = predRes.ok ? await predRes.json() : { predictions: {} };
             const predictions = predData.predictions || {};
             const totalPredictions = Object.keys(predictions).length;
-            let exact = 0, outcome = 0, goalCount = 0;
-            return { ...m, points: exact * 3 + outcome * 2 + goalCount, exact, outcome, goalCount, totalPredictions };
+            
+            let exact = 0, outcome = 0, goalCount = 0, extraPenaltyPoints = 0;
+            Object.entries(predictions).forEach(([matchId, pred]: [string, any]) => {
+              const score = scores[matchId];
+              if (!score || !score.isCompleted) return;
+
+              const isKnockout = matchId >= 'M073';
+              const isRegularExact = pred.homeScore === score.homeScore && pred.awayScore === score.awayScore;
+              const isExact = isKnockout && score.homeScore === score.awayScore
+                ? isRegularExact && pred.homePenaltyScore !== undefined && score.homePenaltyScore !== undefined && pred.homePenaltyScore === score.homePenaltyScore && pred.awayPenaltyScore === score.awayPenaltyScore
+                : isRegularExact;
+
+              if (isExact) {
+                exact++;
+              } else {
+                const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+                const actualWinner = score.homeScore > score.awayScore ? 'home' : (score.homeScore < score.awayScore ? 'away' : (score.homePenaltyScore !== undefined && score.awayPenaltyScore !== undefined && score.homePenaltyScore > score.awayPenaltyScore ? 'home' : 'away'));
+
+                if (isKnockout) {
+                  if (predWinner === actualWinner) {
+                    outcome++;
+                  } else if (pred.homeScore === score.homeScore || pred.awayScore === score.awayScore) {
+                    goalCount++;
+                  }
+                } else {
+                  const predOutcome = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : 'draw');
+                  const actualOutcome = score.homeScore > score.awayScore ? 'home' : (score.homeScore < score.awayScore ? 'away' : 'draw');
+                  if (predOutcome === actualOutcome) {
+                    outcome++;
+                  } else if (pred.homeScore === score.homeScore || pred.awayScore === score.awayScore) {
+                    goalCount++;
+                  }
+                }
+              }
+
+              // Extra penalty points
+              if (isKnockout && score.homeScore === score.awayScore) {
+                const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+                const actualWinner = score.homeScore > score.awayScore ? 'home' : (score.homeScore < score.awayScore ? 'away' : (score.homePenaltyScore !== undefined && score.awayPenaltyScore !== undefined && score.homePenaltyScore > score.awayPenaltyScore ? 'home' : 'away'));
+                if (predWinner === actualWinner) {
+                  extraPenaltyPoints += 3;
+                }
+              }
+            });
+
+            const points = exact * 3 + outcome * 2 + goalCount + extraPenaltyPoints;
+            return { ...m, points, exact, outcome, goalCount, totalPredictions };
           } catch {
             return { ...m, points: 0, exact: 0, outcome: 0, goalCount: 0, totalPredictions: 0 };
           }
