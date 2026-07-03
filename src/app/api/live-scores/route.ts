@@ -168,7 +168,7 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
             const resolvedPlayerName = athlete?.displayName || athlete?.shortName || '';
 
             goals.push({
-              minute: d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').replace('+', '').split('+')[0]) || null : (Math.round((d.clock?.value || 0) / 60) || null),
+              minute: d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').split('+')[0]) || null : (Math.round((d.clock?.value || 0) / 60) || null),
               playerName: resolvedPlayerName,
               teamName: resolvedTeamName,
               teamCode: resolvedTeamCode,

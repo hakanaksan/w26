@@ -193,7 +193,7 @@ async function main() {
           const resolvedTeamCode = rawGoalTeamCode === homeCode ? finalHomeCode : finalAwayCode;
           
           const resolvedPlayerName = athlete?.displayName || athlete?.shortName || 'Unknown';
-          const minute = d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').replace('+', '').split('+')[0]) || null : (Math.round((d.clock?.value || 0) / 60) || null);
+          const minute = d.clock?.displayValue ? parseInt(d.clock.displayValue.replace("'", '').split('+')[0]) || null : (Math.round((d.clock?.value || 0) / 60) || null);
           const isPenalty = d.penaltyKick === true ? 1 : 0;
           const isOwnGoal = d.ownGoal === true ? 1 : 0;
 
