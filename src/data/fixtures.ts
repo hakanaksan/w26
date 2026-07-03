@@ -127,7 +127,7 @@ export const matches: Match[] = [
   { id: 'M083', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-03', time: '02:00', venue: 'Gillette Stadium', city: 'Boston', country: 'ABD', stage: 'Son 32', isCompleted: false },
   { id: 'M084', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-02', time: '22:00', venue: 'Estadio Azteca', city: 'Meksika', country: 'Meksika', stage: 'Son 32', isCompleted: false },
   { id: 'M101', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-03', time: '08:00', venue: 'Estadio BBVA', city: 'Guadalupe', country: 'Meksika', stage: 'Son 32', isCompleted: false },
-  { id: 'M102', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-04', time: '00:00', venue: 'Arrowhead Stadium', city: 'Kansas City', country: 'ABD', stage: 'Son 32', isCompleted: false },
+  { id: 'M102', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-04', time: '01:00', venue: 'Arrowhead Stadium', city: 'Kansas City', country: 'ABD', stage: 'Son 32', isCompleted: false },
   { id: 'M103', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-04', time: '04:30', venue: 'BC Place', city: 'Vancouver', country: 'Kanada', stage: 'Son 32', isCompleted: false },
   { id: 'M104', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-03', time: '21:00', venue: 'Estadio Akron', city: 'Zapopan', country: 'Meksika', stage: 'Son 32', isCompleted: false },
 
