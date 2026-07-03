@@ -14,7 +14,7 @@ async function main() {
   // Dynamically import GET so env variables are loaded first
   const { GET } = await import('../src/app/api/live-scores/route');
 
-  const req = new Request('http://localhost/api/live-scores?date=2026-07-03');
+  const req = new Request('http://localhost/api/live-scores?date=2026-07-04');
   try {
     const res = await GET(req);
     console.log('Status:', res.status);

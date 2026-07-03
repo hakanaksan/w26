@@ -131,7 +131,7 @@ export default function Home() {
     
     const fetchTargetDetails = async () => {
       try {
-        const res = await fetch(`/api/live-scores?date=${targetMatch.date}`);
+        const res = await fetch(`/api/live-scores?date=${targetMatch.date}&t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok && isMounted) {
           const data = await res.json();
           const apiMatch = (data.matches || []).find((m: any) => 
@@ -184,7 +184,7 @@ export default function Home() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const res = await fetch('/api/scores');
+        const res = await fetch(`/api/scores?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const scores: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number; isCompleted: boolean }> = data.scores || {};
@@ -239,13 +239,9 @@ export default function Home() {
   }, [token]);
 
   useEffect(() => {
-    if (activeTab !== 'leaderboard') return;
-    fetch('/api/leaderboard').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setLeaderboard(data.leaderboard || [])).catch(() => {});
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab !== 'scorers') return;
-    fetch('/api/scorers').then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setScorerLeaderboard(data.leaderboard || [])).catch(() => {});
+    if (activeTab !== 'leaderboard' && activeTab !== 'scorers') return;
+    fetch(`/api/leaderboard?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setLeaderboard(data.leaderboard || [])).catch(() => {});
+    fetch(`/api/scorers?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : { leaderboard: [] }).then(data => setScorerLeaderboard(data.leaderboard || [])).catch(() => {});
   }, [activeTab]);
 
   const saveScoreToDB = useCallback(async (matchId: string, homeScore: number, awayScore: number) => {

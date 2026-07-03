@@ -78,7 +78,7 @@ export function useLiveScores(matches: Match[]): LiveScoresResult & { mergedMatc
     try {
       const defaultDate = new Date().toLocaleDateString('sv-SE');
       const dateToFetch = customDate || defaultDate;
-      const response = await fetch(`/api/live-scores?date=${dateToFetch}`);
+      const response = await fetch(`/api/live-scores?date=${dateToFetch}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await response.json();
 
       if (data.source === 'manual') {
