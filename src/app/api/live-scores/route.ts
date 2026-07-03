@@ -107,7 +107,7 @@ function parseStatus(raw: string, source: string): { isCompleted: boolean; isLiv
   if (source === 'espn') {
     const lower = raw.toLowerCase();
     return {
-      isCompleted: lower.includes('final') || lower.includes('full') || lower === 'ft' || lower === 'aet' || lower === 'pen',
+      isCompleted: lower.includes('final') || lower.includes('full') || lower.includes('end_of_extratime') || lower === 'ft' || lower === 'aet' || lower === 'pen',
       isLive: lower.includes('half') || lower.includes('progress') || lower.includes('live') || /^\d+$/.test(raw) || lower.includes('1st') || lower.includes('2nd'),
     };
   }
@@ -203,6 +203,9 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
       const effectiveHomeScore = status.isLive || status.isCompleted ? homeScoreVal : (homeScoreVal !== null && homeScoreVal > 0 ? homeScoreVal : null);
       const effectiveAwayScore = status.isLive || status.isCompleted ? awayScoreVal : (awayScoreVal !== null && awayScoreVal > 0 ? awayScoreVal : null);
 
+      const homePenaltyScore = home.shootoutScore !== undefined && home.shootoutScore !== null ? parseInt(String(home.shootoutScore)) : null;
+      const awayPenaltyScore = away.shootoutScore !== undefined && away.shootoutScore !== null ? parseInt(String(away.shootoutScore)) : null;
+
       return {
         id: `espn_${ev.id}`,
         source: 'espn',
@@ -214,6 +217,8 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
         awayLogo: away.team?.logo || '',
         homeScore: effectiveHomeScore,
         awayScore: effectiveAwayScore,
+        homePenaltyScore,
+        awayPenaltyScore,
         status: comp.status?.type?.name || '',
         date: matchDate || dateStr,
         time: matchTime,
@@ -416,8 +421,8 @@ function alignMatchDates(fetchedMatches: MatchResult[], resolvedSlots: any[] = [
       
       let homeScore90 = isSwapped ? fm.awayScore : fm.homeScore;
       let awayScore90 = isSwapped ? fm.homeScore : fm.awayScore;
-      let homePenalty = fm.homePenaltyScore;
-      let awayPenalty = fm.awayPenaltyScore;
+      let homePenalty = isSwapped ? fm.awayPenaltyScore : fm.homePenaltyScore;
+      let awayPenalty = isSwapped ? fm.homePenaltyScore : fm.awayPenaltyScore;
 
       if (isKnockout && homeScore90 !== null && awayScore90 !== null) {
         const wentToExtraTime = fm.status?.includes('AET') || fm.status?.includes('PEN') || (fm.goals || []).some(g => !g.isYellowCard && !g.isRedCard && g.minute !== null && g.minute > 90);

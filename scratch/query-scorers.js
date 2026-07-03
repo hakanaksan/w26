@@ -18,7 +18,7 @@ const client = createClient({
 });
 
 async function main() {
-  const ids = ['M081', 'M084', 'M101'];
+  const ids = ['M104'];
   for (const id of ids) {
     const scs = await client.execute(`SELECT * FROM scorers WHERE match_id = '${id}'`);
     console.log(`Scorers in DB for ${id}:`, scs.rows);

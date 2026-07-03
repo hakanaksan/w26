@@ -31,6 +31,7 @@ async function main() {
     { matchId: 'M082', home: 2, away: 2, homePen: 3, awayPen: 2 },
     { matchId: 'M083', home: 2, away: 1, homePen: null, awayPen: null },
     { matchId: 'M101', home: 2, away: 0, homePen: null, awayPen: null },
+    { matchId: 'M104', home: 1, away: 1, homePen: 2, awayPen: 4 },
   ];
 
   for (const s of correctScores) {
