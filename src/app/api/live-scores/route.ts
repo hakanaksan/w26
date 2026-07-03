@@ -3,6 +3,8 @@ import { matches as scheduledMatches } from '@/data/fixtures';
 import { resolveRealBracket } from '@/data/bracket';
 import { client } from '@/lib/db-client';
 
+export const dynamic = 'force-dynamic';
+
 const API_FOOTBALL_KEY = process.env.API_FOOTBALL_KEY || '';
 const API_FOOTBALL_HOST = 'v3.football.api-sports.io';
 const WORLD_CUP_LEAGUE_ID = 1;
@@ -184,7 +186,7 @@ async function fetchESPN(dateStr: string): Promise<{ matches: MatchResult[]; ok:
       let minute: number | null = null;
       if (comp.status?.displayClock) {
         const clockStr = comp.status.displayClock;
-        const parsed = parseInt(clockStr.replace("'", '').replace('+', '').split('+')[0]);
+        const parsed = parseInt(clockStr.replace("'", '').split('+')[0]);
         if (!isNaN(parsed)) minute = parsed;
       }
       if (!minute && comp.status?.type?.name === 'STATUS_HALFTIME') {

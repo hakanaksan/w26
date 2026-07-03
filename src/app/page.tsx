@@ -205,6 +205,13 @@ export default function Home() {
 
   useEffect(() => {
     refreshLiveScores(selectedDate);
+    
+    // Auto refresh every 60 seconds
+    const interval = setInterval(() => {
+      refreshLiveScores(selectedDate);
+    }, 60000);
+    
+    return () => clearInterval(interval);
   }, [selectedDate, refreshLiveScores]);
 
   useEffect(() => {
