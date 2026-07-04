@@ -132,28 +132,28 @@ export const matches: Match[] = [
   { id: 'M104', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-03', time: '21:00', venue: 'Estadio Akron', city: 'Zapopan', country: 'Meksika', stage: 'Son 32', isCompleted: false },
 
   // ===== SON 16 =====
-  { id: 'M085', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-04', time: '23:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Son 16', isCompleted: false },
-  { id: 'M086', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-05', time: '06:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Son 16', isCompleted: false },
-  { id: 'M087', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-06', time: '00:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M085', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-05', time: '00:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M086', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-04', time: '20:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M087', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-05', time: '23:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Son 16', isCompleted: false },
   { id: 'M088', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-06', time: '03:00', venue: 'Hard Rock Stadium', city: 'Miami', country: 'ABD', stage: 'Son 16', isCompleted: false },
-  { id: 'M089', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-06', time: '23:00', venue: 'BMO Field', city: 'Toronto', country: 'Kanada', stage: 'Son 16', isCompleted: false },
-  { id: 'M090', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-07', time: '06:00', venue: "Levi's Stadium", city: 'Santa Clara', country: 'ABD', stage: 'Son 16', isCompleted: false },
-  { id: 'M091', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-07', time: '23:00', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', country: 'ABD', stage: 'Son 16', isCompleted: false },
-  { id: 'M092', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-08', time: '04:00', venue: 'NRG Stadium', city: 'Houston', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M089', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-06', time: '22:00', venue: 'BMO Field', city: 'Toronto', country: 'Kanada', stage: 'Son 16', isCompleted: false },
+  { id: 'M090', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-07', time: '03:00', venue: "Levi's Stadium", city: 'Santa Clara', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M091', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-07', time: '19:00', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', country: 'ABD', stage: 'Son 16', isCompleted: false },
+  { id: 'M092', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-07', time: '23:00', venue: 'NRG Stadium', city: 'Houston', country: 'ABD', stage: 'Son 16', isCompleted: false },
 
   // ===== ÇEYREK FİNAL =====
   { id: 'M093', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-09', time: '23:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
-  { id: 'M094', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-10', time: '04:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
-  { id: 'M095', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-11', time: '02:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
-  { id: 'M096', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-11', time: '03:00', venue: 'Hard Rock Stadium', city: 'Miami', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
+  { id: 'M094', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-10', time: '22:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
+  { id: 'M095', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-12', time: '00:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
+  { id: 'M096', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-12', time: '04:00', venue: 'Hard Rock Stadium', city: 'Miami', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
 
   // ===== YARI FİNAL =====
-  { id: 'M097', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-15', time: '03:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
-  { id: 'M098', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-16', time: '04:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
+  { id: 'M097', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-14', time: '22:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
+  { id: 'M098', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-15', time: '22:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
 
   // ===== ÜÇÜNCÜLÜK =====
-  { id: 'M099', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '02:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Üçüncülük', isCompleted: false },
+  { id: 'M099', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '00:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Üçüncülük', isCompleted: false },
 
   // ===== FİNAL =====
-  { id: 'M100', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-20', time: '01:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Final', isCompleted: false },
+  { id: 'M100', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '22:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Final', isCompleted: false },
 ];
