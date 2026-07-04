@@ -427,11 +427,39 @@ function alignMatchDates(fetchedMatches: MatchResult[], resolvedSlots: any[] = [
       if (isKnockout && homeScore90 !== null && awayScore90 !== null) {
         const wentToExtraTime = fm.status?.includes('AET') || fm.status?.includes('PEN') || (fm.goals || []).some(g => !g.isYellowCard && !g.isRedCard && g.minute !== null && g.minute > 90);
         if (wentToExtraTime && homeScore90 !== awayScore90) {
-          const minScore = Math.min(homeScore90, awayScore90);
-          homePenalty = homeScore90;
-          awayPenalty = awayScore90;
-          homeScore90 = minScore;
-          awayScore90 = minScore;
+          // Count goals in first 90 minutes
+          let homeGoals90 = 0;
+          let awayGoals90 = 0;
+          let hasMinuteDetails = false;
+          for (const g of fm.goals || []) {
+            if (!g.isYellowCard && !g.isRedCard && g.minute !== null) {
+              hasMinuteDetails = true;
+              if (g.minute <= 90) {
+                if (g.teamCode === fm.homeCode) homeGoals90++;
+                else if (g.teamCode === fm.awayCode) awayGoals90++;
+              }
+            }
+          }
+          
+          if (hasMinuteDetails) {
+            homePenalty = homeScore90;
+            awayPenalty = awayScore90;
+            homeScore90 = homeGoals90;
+            awayScore90 = awayGoals90;
+            
+            // Force normal time draw if they are not equal (since it went to extra time, normal time must be a draw)
+            if (homeScore90 !== awayScore90) {
+              const minScore = Math.min(homeScore90, awayScore90);
+              homeScore90 = minScore;
+              awayScore90 = minScore;
+            }
+          } else {
+            const minScore = Math.min(homeScore90, awayScore90);
+            homePenalty = homeScore90;
+            awayPenalty = awayScore90;
+            homeScore90 = minScore;
+            awayScore90 = minScore;
+          }
         }
       }
 
