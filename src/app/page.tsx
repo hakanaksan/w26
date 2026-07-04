@@ -23,7 +23,7 @@ import { resolveRealBracket } from '@/data/bracket';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('fixtures');
 
@@ -219,6 +219,10 @@ export default function Home() {
     const fetchPredictions = async () => {
       try {
         const res = await fetch(`/api/predictions?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setPredictions(data.predictions || {});
@@ -228,6 +232,10 @@ export default function Home() {
     const fetchFavorites = async () => {
       try {
         const res = await fetch(`/api/favorites?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+        if (res.status === 401) {
+          logout();
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setFavorites(data.favorites || []);
@@ -266,11 +274,15 @@ export default function Home() {
     setPredictions(prev => ({ ...prev, [matchId]: { homeScore, awayScore, homePenaltyScore, awayPenaltyScore } }));
     if (token) {
       try {
-        await fetch('/api/predictions', {
+        const res = await fetch('/api/predictions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ matchId, homeScore, awayScore, homePenaltyScore, awayPenaltyScore })
         });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
       } catch {}
     }
   };
@@ -278,7 +290,17 @@ export default function Home() {
   const handleDeletePrediction = async (matchId: string) => {
     setPredictions(prev => { const next = { ...prev }; delete next[matchId]; return next; });
     if (token) {
-      try { await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        const res = await fetch('/api/predictions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+      } catch {}
     }
   };
 
@@ -286,10 +308,30 @@ export default function Home() {
     if (!token) return;
     if (favorites.includes(matchId)) {
       setFavorites(prev => prev.filter(id => id !== matchId));
-      try { await fetch('/api/favorites', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        const res = await fetch('/api/favorites', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+      } catch {}
     } else {
       setFavorites(prev => [...prev, matchId]);
-      try { await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+      } catch {}
     }
   };
 

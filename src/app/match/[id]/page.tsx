@@ -10,7 +10,7 @@ import { useLiveScores } from '@/hooks/useLiveScores';
 import { resolveRealBracket } from '@/data/bracket';
 
 export default function MatchDetailPage() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const params = useParams();
   const router = useRouter();
   const matchId = params.id as string;
@@ -95,7 +95,13 @@ export default function MatchDetailPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`/api/predictions?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
-      .then(res => res.ok ? res.json() : { predictions: {} })
+      .then(res => {
+        if (res.status === 401) {
+          logout();
+          throw new Error('401');
+        }
+        return res.ok ? res.json() : { predictions: {} };
+      })
       .then(data => {
         const p = data.predictions?.[matchId];
         if (p) {
@@ -109,7 +115,13 @@ export default function MatchDetailPage() {
       .catch(() => {});
 
     fetch(`/api/favorites?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
-      .then(res => res.ok ? res.json() : { favorites: [] })
+      .then(res => {
+        if (res.status === 401) {
+          logout();
+          throw new Error('401');
+        }
+        return res.ok ? res.json() : { favorites: [] };
+      })
       .then(data => setIsFavorite((data.favorites || []).includes(matchId)))
       .catch(() => {});
   }, [token, matchId]);
@@ -221,12 +233,17 @@ export default function MatchDetailPage() {
     setIsEditingPred(false);
     if (token) {
       try {
-        await fetch('/api/predictions', {
+        const res = await fetch('/api/predictions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ matchId, homeScore: h, awayScore: a, homePenaltyScore: hPen, awayPenaltyScore: aPen })
         });
-        loadUserPredictions();
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        } else {
+          loadUserPredictions();
+        }
       } catch {}
     }
   };
@@ -239,8 +256,17 @@ export default function MatchDetailPage() {
     setAwayPenPred('');
     if (token) {
       try {
-        await fetch('/api/predictions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) });
-        loadUserPredictions();
+        const res = await fetch('/api/predictions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        } else {
+          loadUserPredictions();
+        }
       } catch {}
     }
   };
@@ -249,10 +275,30 @@ export default function MatchDetailPage() {
     if (!token) { router.push('/auth/login'); return; }
     if (isFavorite) {
       setIsFavorite(false);
-      try { await fetch('/api/favorites', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        const res = await fetch('/api/favorites', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+      } catch {}
     } else {
       setIsFavorite(true);
-      try { await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId }) }); } catch {}
+      try {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId })
+        });
+        if (res.status === 401) {
+          logout();
+          alert('Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+      } catch {}
     }
   };
 
