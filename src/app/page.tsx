@@ -141,7 +141,7 @@ export default function Home() {
             setTargetMatchDetails(apiMatch);
             setTargetMatchEvents(apiMatch.goals || []);
           } else {
-            const scorersRes = await fetch('/api/scorers');
+            const scorersRes = await fetch(`/api/scorers?t=${Date.now()}`, { cache: 'no-store' });
             if (scorersRes.ok && isMounted) {
               const scorersData = await scorersRes.json();
               const dbGoals = (scorersData.scorers || [])
@@ -218,7 +218,7 @@ export default function Home() {
     if (!token) return;
     const fetchPredictions = async () => {
       try {
-        const res = await fetch('/api/predictions', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`/api/predictions?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setPredictions(data.predictions || {});
@@ -227,7 +227,7 @@ export default function Home() {
     };
     const fetchFavorites = async () => {
       try {
-        const res = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`/api/favorites?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setFavorites(data.favorites || []);
@@ -262,10 +262,16 @@ export default function Home() {
     deleteScoreFromDB(matchId);
   };
 
-  const handlePredict = async (matchId: string, homeScore: number, awayScore: number) => {
-    setPredictions(prev => ({ ...prev, [matchId]: { homeScore, awayScore } }));
+  const handlePredict = async (matchId: string, homeScore: number, awayScore: number, homePenaltyScore?: number, awayPenaltyScore?: number) => {
+    setPredictions(prev => ({ ...prev, [matchId]: { homeScore, awayScore, homePenaltyScore, awayPenaltyScore } }));
     if (token) {
-      try { await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ matchId, homeScore, awayScore }) }); } catch {}
+      try {
+        await fetch('/api/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ matchId, homeScore, awayScore, homePenaltyScore, awayPenaltyScore })
+        });
+      } catch {}
     }
   };
 
@@ -596,7 +602,7 @@ export default function Home() {
                         [...targetMatchEvents]
                           .sort((a, b) => (a.minute || 90) - (b.minute || 90))
                           .map((event, index) => {
-                            const isGoal = event.eventType === 'goal' || (!event.eventType && !event.isOwnGoal);
+                            const isGoal = event.eventType === 'goal' || (!event.eventType && !event.isOwnGoal && !event.isYellowCard && !event.isRedCard);
                             const isYellow = event.isYellowCard || event.eventType === 'yellowCard';
                             const isRed = event.isRedCard || event.eventType === 'redCard';
                             const eventTeam = getTeam(event.teamCode);
@@ -1169,7 +1175,12 @@ export default function Home() {
                               ) : (
                                 <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Henüz oynanmadı</div>
                               )}
-                              <div className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-1">🎯 {pred.homeScore} - {pred.awayScore}</div>
+                              <div className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-1">
+                                🎯 {pred.homeScore} - {pred.awayScore}
+                                {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.homePenaltyScore !== null && pred.awayPenaltyScore !== undefined && pred.awayPenaltyScore !== null && (
+                                  <span className="text-xs font-normal ml-1.5">(Pen: {pred.homePenaltyScore} - {pred.awayPenaltyScore})</span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-3 flex-1 justify-end">
                               <span className="font-semibold text-gray-900 dark:text-white">{awayTeam.name}</span>

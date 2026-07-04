@@ -54,7 +54,7 @@ export default function MatchDetailPage() {
 
   const loadUserPredictions = async () => {
     try {
-      const res = await fetch(`/api/predictions?matchId=${matchId}`);
+      const res = await fetch(`/api/predictions?matchId=${matchId}&t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setUserPredictions(data.predictions || []);
@@ -75,7 +75,7 @@ export default function MatchDetailPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await fetch('/api/scores');
+        const res = await fetch(`/api/scores?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const scores: Record<string, { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number; isCompleted: boolean }> = data.scores || {};
@@ -94,7 +94,7 @@ export default function MatchDetailPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/predictions', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`/api/predictions?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
       .then(res => res.ok ? res.json() : { predictions: {} })
       .then(data => {
         const p = data.predictions?.[matchId];
@@ -108,7 +108,7 @@ export default function MatchDetailPage() {
       })
       .catch(() => {});
 
-    fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`/api/favorites?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
       .then(res => res.ok ? res.json() : { favorites: [] })
       .then(data => setIsFavorite((data.favorites || []).includes(matchId)))
       .catch(() => {});
@@ -161,7 +161,7 @@ export default function MatchDetailPage() {
   }, [liveMatches, matchId]);
 
   useEffect(() => {
-    fetch('/api/scorers').then(res => res.ok ? res.json() : { scorers: [] })
+    fetch(`/api/scorers?t=${Date.now()}`, { cache: 'no-store' }).then(res => res.ok ? res.json() : { scorers: [] })
       .then(data => {
         const dbEvents = (data.scorers || []).filter((s: any) => s.matchId === matchId).map((s: any) => ({ ...s, eventType: 'goal' as const }));
         setMatchEvents(prev => {
@@ -176,7 +176,7 @@ export default function MatchDetailPage() {
 
   useEffect(() => {
     if (!isCompleted) return;
-    fetch(`/api/scorers`).then(r => r.ok ? r.json() : { scorers: [] }).then(data => {
+    fetch(`/api/scorers?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : { scorers: [] }).then(data => {
       const events = (data.scorers || []).filter((s: { matchId: string }) => s.matchId === matchId);
       setMatchEvents(events);
     }).catch(() => {});
@@ -288,7 +288,7 @@ export default function MatchDetailPage() {
         setEventTeam('');
         setEventIsPenalty(false);
         setEventIsOwnGoal(false);
-        const data = await (await fetch('/api/scorers')).json();
+        const data = await (await fetch(`/api/scorers?t=${Date.now()}`, { cache: 'no-store' })).json();
         const events = (data.scorers || []).filter((s: { matchId: string }) => s.matchId === matchId);
         setMatchEvents(events);
       }
@@ -536,9 +536,15 @@ export default function MatchDetailPage() {
 
           {!isCompleted && user && !isEditingPred && !prediction && (
             <div className="mb-4">
-              <button onClick={() => { setIsEditingPred(true); setHomePred(''); setAwayPred(''); }} className="btn-primary w-full py-3 text-center">
-                🎯 Tahmin Yap
-              </button>
+              {match.homeTeamId === 'TBD' || match.awayTeamId === 'TBD' ? (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 text-center font-medium">
+                  Eşleşen takımlar henüz belli olmadığı için tahmin yapılamaz.
+                </div>
+              ) : (
+                <button onClick={() => { setIsEditingPred(true); setHomePred(''); setAwayPred(''); }} className="btn-primary w-full py-3 text-center">
+                  🎯 Tahmin Yap
+                </button>
+              )}
             </div>
           )}
 

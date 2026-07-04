@@ -73,7 +73,7 @@ export default function BracketView() {
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        const res = await fetch('/api/scores');
+        const res = await fetch(`/api/scores?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const scores = data.scores || {};

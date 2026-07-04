@@ -8,9 +8,9 @@ import { getMatchStatus } from '@/lib/match-status';
 
 interface MatchCardProps {
   match: Match;
-  prediction?: { homeScore: number; awayScore: number } | null;
+  prediction?: { homeScore: number; awayScore: number; homePenaltyScore?: number; awayPenaltyScore?: number } | null;
   onScoreUpdate?: (matchId: string, homeScore: number, awayScore: number) => void;
-  onPredict?: (matchId: string, homeScore: number, awayScore: number) => void;
+  onPredict?: (matchId: string, homeScore: number, awayScore: number, homePenaltyScore?: number, awayPenaltyScore?: number) => void;
   onNotify?: (matchId: string) => void;
   onClearScore?: (matchId: string) => void;
   onDeletePrediction?: (matchId: string) => void;
@@ -94,6 +94,8 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
   const [awayScore, setAwayScore] = useState('');
   const [homePred, setHomePred] = useState(prediction ? String(prediction.homeScore) : '');
   const [awayPred, setAwayPred] = useState(prediction ? String(prediction.awayScore) : '');
+  const [homePenPred, setHomePenPred] = useState(prediction?.homePenaltyScore !== undefined && prediction?.homePenaltyScore !== null ? String(prediction.homePenaltyScore) : '');
+  const [awayPenPred, setAwayPenPred] = useState(prediction?.awayPenaltyScore !== undefined && prediction?.awayPenaltyScore !== null ? String(prediction.awayPenaltyScore) : '');
   const [isEditingScore, setIsEditingScore] = useState(false);
   const [isEditingPred, setIsEditingPred] = useState(false);
 
@@ -130,7 +132,19 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
     const h = parseInt(homePred);
     const a = parseInt(awayPred);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0 || h > 99 || a > 99) return;
-    onPredict?.(match.id, h, a);
+
+    let hPen: number | undefined;
+    let aPen: number | undefined;
+    if (h === a && match.stage !== 'Grup') {
+      hPen = parseInt(homePenPred);
+      aPen = parseInt(awayPenPred);
+      if (isNaN(hPen) || isNaN(aPen) || hPen < 0 || aPen < 0 || hPen === aPen) {
+        alert('Penaltılarda kazananı belirlemek için farklı skorlar girmelisiniz.');
+        return;
+      }
+    }
+
+    onPredict?.(match.id, h, a, hPen, aPen);
     setIsEditingPred(false);
   };
 
@@ -204,7 +218,14 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
         <div className="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between text-sm">
           <span className="text-amber-700 dark:text-amber-400 font-medium">🎯 Tahminin:</span>
           <div className="flex items-center gap-2">
-            <a href={`/match/${match.id}`} className="font-bold text-amber-800 dark:text-amber-300 hover:underline">{prediction.homeScore} - {prediction.awayScore}</a>
+            <a href={`/match/${match.id}`} className="font-bold text-amber-800 dark:text-amber-300 hover:underline">
+              {prediction.homeScore} - {prediction.awayScore}
+              {prediction.homeScore === prediction.awayScore && prediction.homePenaltyScore !== undefined && prediction.awayPenaltyScore !== undefined && (
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-normal ml-1">
+                  (Pen: {prediction.homePenaltyScore} - {prediction.awayPenaltyScore})
+                </span>
+              )}
+            </a>
             {onDeletePrediction && (
               <button onClick={() => onDeletePrediction(match.id)} className="text-red-400 hover:text-red-600 text-xs underline ml-2">Sil</button>
             )}
@@ -218,6 +239,9 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
           <div className="flex items-center gap-2">
             <span className={prediction.homeScore === match.homeScore && prediction.awayScore === match.awayScore ? 'text-green-600 dark:text-green-400 font-bold' : 'text-red-500 dark:text-red-400 font-bold'}>
               {prediction.homeScore} - {prediction.awayScore}
+              {prediction.homeScore === prediction.awayScore && prediction.homePenaltyScore !== undefined && prediction.awayPenaltyScore !== undefined && (
+                <span className="text-xs font-normal ml-1">(Pen: {prediction.homePenaltyScore} - {prediction.awayPenaltyScore})</span>
+              )}
             </span>
             {prediction.homeScore === match.homeScore && prediction.awayScore === match.awayScore ? (
               <span className="text-green-600 dark:text-green-400 text-xs font-medium bg-green-100 dark:bg-green-900/20 px-2 py-0.5 rounded">✓ Tam isabet!</span>
@@ -256,6 +280,16 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
             <span className="text-gray-400 dark:text-gray-500 text-xl">:</span>
             <input type="number" min="0" max="99" value={awayPred} onChange={e => setAwayPred(e.target.value)} className="input-field w-16 text-center text-xl font-bold" placeholder="0" />
           </div>
+          {homePred !== '' && awayPred !== '' && parseInt(homePred) === parseInt(awayPred) && match.stage !== 'Grup' && (
+            <div className="flex flex-col items-center gap-1.5 p-3 bg-amber-100/50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 rounded-xl mt-3 max-w-[200px] mx-auto">
+              <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">Penaltı Atışları</span>
+              <div className="flex items-center gap-2">
+                <input type="number" min="0" max="99" value={homePenPred} onChange={e => setHomePenPred(e.target.value)} className="input-field w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+                <span className="text-sm font-bold text-gray-400">-</span>
+                <input type="number" min="0" max="99" value={awayPenPred} onChange={e => setAwayPenPred(e.target.value)} className="input-field w-12 text-center text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1" placeholder="P" />
+              </div>
+            </div>
+          )}
           <div className="flex gap-2 mt-2 justify-center">
             <button onClick={handlePredSave} className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-600">Kaydet</button>
             <button onClick={() => setIsEditingPred(false)} className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500">İptal</button>
@@ -295,9 +329,15 @@ export default function MatchCard({ match, prediction, onScoreUpdate, onPredict,
 
       <div className="mt-3 flex gap-2 flex-wrap">
         {!isCompleted && onPredict && !isEditingPred && (
-          <button onClick={() => setIsEditingPred(true)} className="btn-primary flex items-center gap-1 text-sm">
-            🎯 Tahmin Et
-          </button>
+          match.homeTeamId === 'TBD' || match.awayTeamId === 'TBD' ? (
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic bg-gray-50/50 dark:bg-gray-800/35 px-3 py-1.5 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+              Takımlar bekleniyor
+            </span>
+          ) : (
+            <button onClick={() => setIsEditingPred(true)} className="btn-primary flex items-center gap-1 text-sm">
+              🎯 Tahmin Et
+            </button>
+          )
         )}
         {onScoreUpdate && !isEditingScore && !isCompleted && (
           <button onClick={() => setIsEditingScore(true)} className="btn-secondary text-sm flex items-center gap-1">
