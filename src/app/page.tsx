@@ -907,7 +907,7 @@ export default function Home() {
                       </tr>
                     ) : (
                       leaderboard.map((entry, index) => (
-                        <tr key={entry.userId} onClick={() => { setSelectedUserId(entry.userId); fetch(`/api/leaderboard?userId=${entry.userId}`).then(r => r.json()).then(d => setUserDetail(d)).catch(() => {}); }} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer ${index < 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
+                        <tr key={entry.userId} onClick={() => { setSelectedUserId(entry.userId); fetch(`/api/leaderboard?userId=${entry.userId}&t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setUserDetail(d)).catch(() => {}); }} className={`border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer ${index < 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}>
                           <td className="py-4 px-4">
                             <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${index === 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : index === 1 ? 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' : index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                               {index + 1}
@@ -936,149 +936,158 @@ export default function Home() {
           </div>
         )}
 
-        {selectedUserId && userDetail && (
+        {selectedUserId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setSelectedUserId(null); setUserDetail(null); }}>
             <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 pb-4 border-b border-gray-100 dark:border-gray-700 rounded-t-3xl z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
-                      {userDetail.user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{userDetail.user.name}</h3>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                        <span>{userDetail.stats.total} tahmin</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{userDetail.stats.exact} tam</span>
-                        <span className="text-indigo-600 dark:text-indigo-400">{userDetail.stats.outcome} sonuç</span>
-                        <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.goalCount} gol</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{userDetail.stats.points} puan</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => { setSelectedUserId(null); setUserDetail(null); }} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+              {!userDetail ? (
+                <div className="p-12 flex flex-col items-center justify-center gap-3">
+                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Tahmin detayları yükleniyor...</p>
                 </div>
-              </div>
-              <div className="p-6 pt-4 space-y-3">
-                {(() => {
-                  const getPointsDetail = (pred: any, match: any) => {
-                    if (!match.isCompleted || match.homeScore === undefined || match.awayScore === undefined) {
-                      return { label: 'Bekliyor', points: 0, color: 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800' };
-                    }
-                    const isKnockout = match.id >= 'M073';
-                    const isRegularExact = pred.homeScore === match.homeScore && pred.awayScore === match.awayScore;
-                    const isExact = isKnockout && match.homeScore === match.awayScore
-                      ? isRegularExact && pred.homePenaltyScore !== undefined && match.homePenaltyScore !== undefined && pred.homePenaltyScore === match.homePenaltyScore && pred.awayPenaltyScore === match.awayPenaltyScore
-                      : isRegularExact;
-
-                    if (isExact) {
-                      let bonus = 0;
-                      if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
-                        const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
-                        const actualWinner = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : (match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && match.homePenaltyScore > match.awayPenaltyScore ? 'home' : 'away'));
-                        if (predWinner === actualWinner) {
-                          bonus = 3;
-                        }
-                      }
-                      return { label: 'Tam İsabet', points: 3 + bonus, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20' };
-                    }
-
-                    const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
-                    const actualWinner = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : (match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && match.homePenaltyScore > match.awayPenaltyScore ? 'home' : 'away'));
-
-                    let isOutcome = false;
-                    if (isKnockout) {
-                      isOutcome = predWinner === actualWinner || (pred.homeScore === pred.awayScore && match.homeScore === match.awayScore);
-                    } else {
-                      const predOutcome = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : 'draw');
-                      const actualOutcome = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : 'draw');
-                      isOutcome = predOutcome === actualOutcome;
-                    }
-
-                    let bonus = 0;
-                    if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
-                      if (predWinner === actualWinner) {
-                        bonus = 3;
-                      }
-                    }
-
-                    if (isOutcome) {
-                      return { label: 'Sonuç Doğru', points: 2 + bonus, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20' };
-                    }
-
-                    if (pred.homeScore === match.homeScore || pred.awayScore === match.awayScore) {
-                      return { label: 'Gol Sayısı', points: 1, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20' };
-                    }
-
-                    return { label: 'İsabet Yok', points: 0, color: 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20' };
-                  };
-
-                  return Object.entries(userDetail.predictions)
-                    .sort((a, b) => a[0].localeCompare(b[0]))
-                    .map(([matchId, pred]) => {
-                      const match = matches.find(m => m.id === matchId);
-                      if (!match) return null;
-                      const homeTeam = getTeam(match.homeTeamId);
-                      const awayTeam = getTeam(match.awayTeamId);
-                      const ptsInfo = getPointsDetail(pred, match);
-
-                      return (
-                        <div key={matchId} className="flex flex-col p-3 rounded-2xl bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 gap-2">
-                          <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 pb-1.5">
-                            <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{match.id} • {match.stage === 'Grup' ? `${match.group} Grubu` : match.stage}</span>
-                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-current/10 ${ptsInfo.color}`}>
-                              {ptsInfo.label} (+{ptsInfo.points} Puan)
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <img src={homeTeam.flag || getFlagUrl(match.homeTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0 animate-fade-in" />
-                              <span className="text-xs text-gray-700 dark:text-gray-200 font-bold truncate">{homeTeam.name}</span>
-                              <span className="text-xs text-gray-400 dark:text-gray-500 mx-0.5">vs</span>
-                              <span className="text-xs text-gray-700 dark:text-gray-200 font-bold truncate">{awayTeam.name}</span>
-                              <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0 animate-fade-in" />
-                            </div>
-                            
-                            <div className="flex items-center gap-4 text-xs flex-shrink-0">
-                              <div className="text-right">
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 block">Tahmin</span>
-                                <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                                  {pred.homeScore} - {pred.awayScore}
-                                  {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
-                                    <span className="text-[9px] font-normal block text-amber-500 dark:text-amber-300">
-                                      (Pen: {pred.homePenaltyScore}-{pred.awayPenaltyScore})
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                              
-                              <div className="text-right">
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 block">Gerçek</span>
-                                <span className="font-bold text-gray-900 dark:text-white tabular-nums">
-                                  {match.isCompleted ? (
-                                    <>
-                                      {match.homeScore} - {match.awayScore}
-                                      {match.homeScore === match.awayScore && match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && (
-                                        <span className="text-[9px] font-normal block text-gray-500 dark:text-gray-400">
-                                          (Pen: {match.homePenaltyScore}-{match.awayPenaltyScore})
-                                        </span>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <span className="text-gray-400 font-medium italic">Oynanmadı</span>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
+              ) : (
+                <>
+                  <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 pb-4 border-b border-gray-100 dark:border-gray-700 rounded-t-3xl z-10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                          {userDetail.user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{userDetail.user.name}</h3>
+                          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                            <span>{userDetail.stats.total} tahmin</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{userDetail.stats.exact} tam</span>
+                            <span className="text-indigo-600 dark:text-indigo-400">{userDetail.stats.outcome} sonuç</span>
+                            <span className="text-amber-600 dark:text-amber-400">{userDetail.stats.goalCount} gol</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{userDetail.stats.points} puan</span>
                           </div>
                         </div>
-                      );
-                    });
-                })()}
-              </div>
+                      </div>
+                      <button onClick={() => { setSelectedUserId(null); setUserDetail(null); }} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-6 pt-4 space-y-3">
+                    {(() => {
+                      const getPointsDetail = (pred: any, match: any) => {
+                        if (!match.isCompleted || match.homeScore == null || match.awayScore == null) {
+                          return { label: 'Bekliyor', points: 0, color: 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800' };
+                        }
+                        const isKnockout = match.id >= 'M073';
+                        const isRegularExact = pred.homeScore === match.homeScore && pred.awayScore === match.awayScore;
+                        const isExact = isKnockout && match.homeScore === match.awayScore
+                          ? isRegularExact && pred.homePenaltyScore !== undefined && match.homePenaltyScore !== undefined && pred.homePenaltyScore === match.homePenaltyScore && pred.awayPenaltyScore === match.awayPenaltyScore
+                          : isRegularExact;
+
+                        if (isExact) {
+                          let bonus = 0;
+                          if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
+                            const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+                            const actualWinner = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : (match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && match.homePenaltyScore > match.awayPenaltyScore ? 'home' : 'away'));
+                            if (predWinner === actualWinner) {
+                              bonus = 3;
+                            }
+                          }
+                          return { label: 'Tam İsabet', points: 3 + bonus, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20' };
+                        }
+
+                        const predWinner = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : (pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && pred.homePenaltyScore > pred.awayPenaltyScore ? 'home' : 'away'));
+                        const actualWinner = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : (match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && match.homePenaltyScore > match.awayPenaltyScore ? 'home' : 'away'));
+
+                        let isOutcome = false;
+                        if (isKnockout) {
+                          isOutcome = predWinner === actualWinner || (pred.homeScore === pred.awayScore && match.homeScore === match.awayScore);
+                        } else {
+                          const predOutcome = pred.homeScore > pred.awayScore ? 'home' : (pred.homeScore < pred.awayScore ? 'away' : 'draw');
+                          const actualOutcome = match.homeScore! > match.awayScore! ? 'home' : (match.homeScore! < match.awayScore! ? 'away' : 'draw');
+                          isOutcome = predOutcome === actualOutcome;
+                        }
+
+                        let bonus = 0;
+                        if (isKnockout && match.id >= 'M081' && match.homeScore === match.awayScore && pred.homeScore === pred.awayScore) {
+                          if (predWinner === actualWinner) {
+                            bonus = 3;
+                          }
+                        }
+
+                        if (isOutcome) {
+                          return { label: 'Sonuç Doğru', points: 2 + bonus, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20' };
+                        }
+
+                        if (pred.homeScore === match.homeScore || pred.awayScore === match.awayScore) {
+                          return { label: 'Gol Sayısı', points: 1, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20' };
+                        }
+
+                        return { label: 'İsabet Yok', points: 0, color: 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20' };
+                      };
+
+                      return Object.entries(userDetail.predictions)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([matchId, pred]) => {
+                          const match = matches.find(m => m.id === matchId);
+                          if (!match) return null;
+                          const homeTeam = getTeam(match.homeTeamId);
+                          const awayTeam = getTeam(match.awayTeamId);
+                          const ptsInfo = getPointsDetail(pred, match);
+
+                          return (
+                            <div key={matchId} className="flex flex-col p-3 rounded-2xl bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/50 gap-2">
+                              <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 pb-1.5">
+                                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{match.id} • {match.stage === 'Grup' ? `${match.group} Grubu` : match.stage}</span>
+                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-current/10 ${ptsInfo.color}`}>
+                                  {ptsInfo.label} (+{ptsInfo.points} Puan)
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <img src={homeTeam.flag || getFlagUrl(match.homeTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0 animate-fade-in" />
+                                  <span className="text-xs text-gray-700 dark:text-gray-200 font-bold truncate">{homeTeam.name}</span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 mx-0.5">vs</span>
+                                  <span className="text-xs text-gray-700 dark:text-gray-200 font-bold truncate">{awayTeam.name}</span>
+                                  <img src={awayTeam.flag || getFlagUrl(match.awayTeamId)} alt="" className="w-6 h-4 rounded object-cover flex-shrink-0 animate-fade-in" />
+                                </div>
+                                
+                                <div className="flex items-center gap-4 text-xs flex-shrink-0">
+                                  <div className="text-right">
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 block">Tahmin</span>
+                                    <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                                      {pred.homeScore} - {pred.awayScore}
+                                      {pred.homeScore === pred.awayScore && pred.homePenaltyScore !== undefined && pred.awayPenaltyScore !== undefined && (
+                                        <span className="text-[9px] font-normal block text-amber-500 dark:text-amber-300">
+                                          (Pen: {pred.homePenaltyScore}-{pred.awayPenaltyScore})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 block">Gerçek</span>
+                                    <span className="font-bold text-gray-900 dark:text-white tabular-nums">
+                                      {match.isCompleted ? (
+                                        <>
+                                          {match.homeScore} - {match.awayScore}
+                                          {match.homeScore === match.awayScore && match.homePenaltyScore !== undefined && match.awayPenaltyScore !== undefined && (
+                                            <span className="text-[9px] font-normal block text-gray-500 dark:text-gray-400">
+                                              (Pen: {match.homePenaltyScore}-{match.awayPenaltyScore})
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-gray-400 font-medium italic">Oynanmadı</span>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                    })()}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
