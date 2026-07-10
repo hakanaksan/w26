@@ -107,7 +107,7 @@ async function main() {
   const resolvedSlots = resolveRealBracket(mergedMatches);
 
   // 2. Fetch ESPN scoreboard
-  const url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260705';
+  const url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260720';
   console.log('Fetching ESPN scoreboard...');
   const response = await fetch(url);
   const json = await response.json();
