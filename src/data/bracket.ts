@@ -277,7 +277,7 @@ export function resolveBracket(
       // Loser of a match
       const srcMatch = homeFrom.replace('_L', '');
       const srcSlot = slots.find(s => s.matchId === srcMatch);
-      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner && srcSlot.winner !== 'TBD') {
         homeTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
       }
     } else if (homeFrom.endsWith('_W')) {
@@ -291,7 +291,7 @@ export function resolveBracket(
     if (awayFrom.endsWith('_L')) {
       const srcMatch = awayFrom.replace('_L', '');
       const srcSlot = slots.find(s => s.matchId === srcMatch);
-      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner && srcSlot.winner !== 'TBD') {
         awayTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
       }
     } else if (awayFrom.endsWith('_W')) {
@@ -486,7 +486,7 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
     if (homeFrom.endsWith('_L')) {
       const srcMatch = homeFrom.replace('_L', '');
       const srcSlot = slots.find(s => s.matchId === srcMatch);
-      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner && srcSlot.winner !== 'TBD') {
         homeTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
       }
     } else if (homeFrom.endsWith('_W')) {
@@ -500,7 +500,7 @@ export function resolveRealBracket(matchData: Match[]): BracketSlot[] {
     if (awayFrom.endsWith('_L')) {
       const srcMatch = awayFrom.replace('_L', '');
       const srcSlot = slots.find(s => s.matchId === srcMatch);
-      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner) {
+      if (srcSlot && srcSlot.homeTeamId !== 'TBD' && srcSlot.awayTeamId !== 'TBD' && srcSlot.winner && srcSlot.winner !== 'TBD') {
         awayTeam = srcSlot.winner === srcSlot.homeTeamId ? srcSlot.awayTeamId : srcSlot.homeTeamId;
       }
     } else if (awayFrom.endsWith('_W')) {
