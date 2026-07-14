@@ -148,11 +148,11 @@ export const matches: Match[] = [
   { id: 'M096', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-12', time: '04:00', venue: 'Hard Rock Stadium', city: 'Miami', country: 'ABD', stage: 'Çeyrek Final', isCompleted: false },
 
   // ===== YARI FİNAL =====
-  { id: 'M097', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-14', time: '22:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
-  { id: 'M098', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-15', time: '22:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
+  { id: 'M097', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-14', time: '21:00', venue: 'AT&T Stadium', city: 'Dallas', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
+  { id: 'M098', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-15', time: '21:00', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', country: 'ABD', stage: 'Yarı Final', isCompleted: false },
 
   // ===== ÜÇÜNCÜLÜK =====
-  { id: 'M099', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '00:00', venue: 'SoFi Stadium', city: 'Los Angeles', country: 'ABD', stage: 'Üçüncülük', isCompleted: false },
+  { id: 'M099', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '00:00', venue: 'Hard Rock Stadium', city: 'Miami', country: 'ABD', stage: 'Üçüncülük', isCompleted: false },
 
   // ===== FİNAL =====
   { id: 'M100', homeTeamId: 'TBD', awayTeamId: 'TBD', date: '2026-07-19', time: '22:00', venue: 'MetLife Stadium', city: 'New York', country: 'ABD', stage: 'Final', isCompleted: false },
